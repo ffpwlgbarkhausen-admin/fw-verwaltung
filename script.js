@@ -1,0 +1,75 @@
+let globalData = null;
+const BACKEND_URL = "https://script.google.com/macros/s/AKfycbxA8lHhtAXoGKTCkN1s4thQH-qWQYeNS3QkySUDpB-2_3mrAuy2cuuWBy4UjR4xpjeR/exec";
+
+window.onload = () => {
+  if (localStorage.getItem('dark-mode') === 'true') {
+    document.documentElement.classList.add('dark');
+    document.getElementById('dark-icon').innerText = '☀️';
+  }
+  ladeDaten();
+};
+
+async function ladeDaten() {
+  const punkt = document.getElementById('status-punkt');
+  try {
+    const response = await fetch(BACKEND_URL + "?action=read&module=all_dashboard_data");
+    const rawData = await response.json();
+    
+    // 2026 Filter & Deduplizierung
+    const aktuelleJahr = 2026; 
+    const eindeutigeEinsaetze = [];
+    const gesehen = new Set();
+
+    rawData.operations.forEach(e => {
+      const datum = new Date(e.Zeitpunkt || e.Datum);
+      const einsatzJahr = !isNaN(datum) ? datum.getFullYear() : 0;
+      const id = `${einsatzJahr}-${e.Einsatznummer}`;
+
+      if (einsatzJahr === aktuelleJahr && !gesehen.has(id)) {
+        gesehen.add(id);
+        eindeutigeEinsaetze.push(e);
+      }
+    });
+
+    globalData = {
+      operations: eindeutigeEinsaetze,
+      personnel: rawData.personnel
+    };
+
+    if (punkt) {
+      punkt.classList.add('glow-green');
+      punkt.classList.remove('bg-gray-400');
+    }
+    showPage('dashboard');
+
+  } catch (error) {
+    console.error("Fehler:", error);
+    if (punkt) punkt.classList.add('bg-red-600');
+  }
+}
+
+function showPage(page) {
+  const content = document.getElementById('app-content');
+  if (!globalData) return;
+
+  if (page === 'dashboard') {
+    content.innerHTML = `
+      <div class="space-y-4">
+        <div class="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border-l-4 border-red-600">
+          <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Einsätze 2026</p>
+          <p class="text-5xl font-black text-slate-900 dark:text-white">${globalData.operations.length}</p>
+        </div>
+        <div class="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border-l-4 border-slate-400">
+          <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Personal</p>
+          <p class="text-5xl font-black text-slate-900 dark:text-white">${globalData.personnel.length}</p>
+        </div>
+      </div>`;
+  }
+  // Hier kannst du 'personal' und 'einsaetze' analog ergänzen
+}
+
+function toggleDarkMode() {
+  const isDark = document.documentElement.classList.toggle('dark');
+  document.getElementById('dark-icon').innerText = isDark ? '☀️' : '🌙';
+  localStorage.setItem('dark-mode', isDark);
+}
