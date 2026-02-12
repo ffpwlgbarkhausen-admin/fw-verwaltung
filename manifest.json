@@ -1,0 +1,17 @@
+{
+  "name": "LG13 PRO Verwaltung",
+  "short_name": "LG13 PRO",
+  "description": "Einsatzverwaltung Löschgruppe 13",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#dc2626",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/784/784114.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
