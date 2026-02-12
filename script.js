@@ -50,7 +50,14 @@ async function ladeDaten() {
 
 function showPage(page) {
   const content = document.getElementById('app-content');
-  if (!globalData) return;
+  
+  // 1. Sicherung: Falls Daten noch nicht da sind, zeige Lade-Spinner
+  if (!globalData) {
+    content.innerHTML = '<div class="text-center py-20 animate-pulse italic text-slate-500">Daten werden noch empfangen...</div>';
+    return;
+  }
+
+  console.log("Wechsle zur Seite:", page); // Zum Testen in der Konsole
 
   if (page === 'dashboard') {
     content.innerHTML = `
@@ -66,10 +73,13 @@ function showPage(page) {
       </div>`;
   }
   // Hier kannst du 'personal' und 'einsaetze' analog ergänzen
+// Nach dem Wechseln: Scrolle nach ganz oben
+  window.scrollTo(0, 0);
 }
 
 function toggleDarkMode() {
   const isDark = document.documentElement.classList.toggle('dark');
   document.getElementById('dark-icon').innerText = isDark ? '☀️' : '🌙';
   localStorage.setItem('dark-mode', isDark);
+
 }
