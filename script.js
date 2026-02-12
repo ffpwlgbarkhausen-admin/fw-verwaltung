@@ -116,4 +116,7 @@ function toggleDarkMode() {
   localStorage.setItem('dark-mode', isDark);
 
 }
+// Damit die Buttons die Funktionen unter Garantie finden
+window.showPage = showPage;
+window.toggleDarkMode = toggleDarkMode;
 
