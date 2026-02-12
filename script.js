@@ -72,7 +72,40 @@ function showPage(page) {
         </div>
       </div>`;
   }
-  // Hier kannst du 'personal' und 'einsaetze' analog ergänzen
+  if (page === 'einsaetze') {
+    let html = '<h2 class="text-xl font-black mb-4 uppercase italic">Einsatzliste 2026</h2><div class="space-y-3">';
+    // Neueste Einsätze zuerst anzeigen
+    const sortiert = [...globalData.operations].sort((a, b) => b.Einsatznummer - a.Einsatznummer);
+    
+    sortiert.forEach(e => {
+      html += `
+        <div class="bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border-l-4 border-red-500">
+          <div class="flex justify-between items-start">
+            <span class="text-[10px] font-bold text-slate-400">#${e.Einsatznummer}</span>
+            <span class="text-[10px] text-slate-500">${e.Datum}</span>
+          </div>
+          <p class="font-bold text-slate-900 dark:text-white leading-tight">${e.Stichwort || 'Einsatz'}</p>
+          <p class="text-[10px] text-slate-500 uppercase mt-1">${e["Einsatz Art"] || ''}</p>
+        </div>`;
+    });
+    html += '</div>';
+    content.innerHTML = html;
+  }
+  if (page === 'personal') {
+    let html = '<h2 class="text-xl font-black mb-4 uppercase italic">Mannschaft LG13</h2><div class="grid gap-2">';
+    globalData.personnel.forEach(p => {
+      html += `
+        <div class="bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm flex justify-between items-center">
+          <div>
+            <p class="font-bold text-slate-900 dark:text-white">${p.Vorname} ${p.Nachname}</p>
+            <p class="text-[10px] text-slate-500 uppercase tracking-widest">${p.Dienstgrad || 'Feuerwehr'}</p>
+          </div>
+          <div class="w-2 h-2 rounded-full bg-green-500"></div>
+        </div>`;
+    });
+    html += '</div>';
+    content.innerHTML = html;
+  }
 // Nach dem Wechseln: Scrolle nach ganz oben
   window.scrollTo(0, 0);
 }
@@ -83,3 +116,4 @@ function toggleDarkMode() {
   localStorage.setItem('dark-mode', isDark);
 
 }
+
