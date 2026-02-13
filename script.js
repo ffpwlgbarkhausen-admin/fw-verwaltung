@@ -222,6 +222,29 @@ function toggleDarkMode() {
 window.showPage = showPage;
 window.toggleDarkMode = toggleDarkMode;
 
+function filterPersonnelTable() {
+    const input = document.getElementById('personnelSearch');
+    const filter = input.value.toUpperCase();
+    const container = document.getElementById('personalTableContainer');
+    
+    // Wir suchen die Tabelle, die Core.ui.renderTable erzeugt hat
+    const table = container.getElementsByTagName("table")[0];
+    if (!table) return;
+
+    const tr = table.getElementsByTagName("tr");
+
+    // Wir starten bei i=1, um die Überschriften der Tabelle stehen zu lassen
+    for (let i = 1; i < tr.length; i++) {
+        const rowText = tr[i].textContent || tr[i].innerText;
+        
+        if (rowText.toUpperCase().indexOf(filter) > -1) {
+            tr[i].style.display = ""; // Zeile passt zur Suche
+        } else {
+            tr[i].style.display = "none"; // Zeile ausblenden
+        }
+    }
+}
+
 
 
 
