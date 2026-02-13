@@ -19,6 +19,18 @@ const Core = {
 
     service: {
         endpoint: 'https://script.google.com/macros/s/AKfycbxA8lHhtAXoGKTCkN1s4thQH-qWQYeNS3QkySUDpB-2_3mrAuy2cuuWBy4UjR4xpjeR/exec',
+
+        updateStatus(color) {
+            const d = document.getElementById('conn-dot');
+            if(d) { 
+                const colorMap = {
+                    'green': 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.9)]',
+                    'orange': 'bg-amber-500 animate-pulse shadow-[0_0_8px_rgba(245,158,11,0.9)]',
+                    'red': 'bg-rose-600 animate-bounce shadow-[0_0_8px_rgba(225,29,72,0.9)]'
+                };
+                d.className = `absolute -top-1 -right-2 w-2 h-2 rounded-full transition-all duration-500 ${colorMap[color] || 'bg-slate-400'}`;
+            }
+        },
         
         async fetchData() {
             try {
@@ -134,4 +146,5 @@ const Core = {
 
 // Initialisierung
 Core.service.fetchData();
+
 
