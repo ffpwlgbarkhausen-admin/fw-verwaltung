@@ -4,6 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>FW-Verwaltung Pro</title>
+
+    <link rel="manifest" href="manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#dc2626">
+
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('✅ SW registriert'))
+                    .catch(err => console.log('❌ SW Fehler', err));
+            });
+        }
+    </script>
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -11,67 +27,66 @@
             theme: { extend: { colors: { brandRed: '#dc2626' } } }
         }
     </script>
+
     <style>
-    /* 1. SCHRIFTARTEN & BASIS */
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap');
-    
-    :root {
-        --brandRed: #dc2626;
-        --status-green: #22c55e;
-    }
+        /* SCHRIFTARTEN & BASIS */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap');
+        
+        :root {
+            --brandRed: #dc2626;
+            --status-green: #22c55e;
+        }
 
-    body { 
-        font-family: 'Inter', sans-serif; 
-        -webkit-tap-highlight-color: transparent; 
-        @apply bg-slate-50 dark:bg-slate-950;
-    }
+        body { 
+            font-family: 'Inter', sans-serif; 
+            -webkit-tap-highlight-color: transparent; 
+        }
 
-    /* 2. LOGO- & ÜBERSCHRIFT-DESIGN */
-    .font-black-italic { 
-        font-weight: 900; 
-        font-style: italic; 
-        text-transform: uppercase; 
-        letter-spacing: -0.02em; 
-    }
+        /* LOGO- & ÜBERSCHRIFT-DESIGN */
+        .font-black-italic { 
+            font-weight: 900; 
+            font-style: italic; 
+            text-transform: uppercase; 
+            letter-spacing: -0.02em; 
+        }
 
-    .animate-logo {
-        display: inline-block;
-        animation: fadeIn 1.2s ease-out forwards;
-    }
+        .animate-logo {
+            display: inline-block;
+            animation: fadeIn 1.2s ease-out forwards;
+        }
 
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(2px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(2px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
 
-    /* 3. NAVIGATION (AKTIVER ZUSTAND) */
-    .nav-active { 
-        background-color: white !important; 
-        color: var(--brandRed) !important; 
-        box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1); 
-    }
+        /* NAVIGATION (AKTIVER ZUSTAND) */
+        .nav-active { 
+            background-color: white !important; 
+            color: var(--brandRed) !important; 
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1); 
+        }
 
-    .dark .nav-active { 
-        background-color: #1e293b !important; 
-        color: #ef4444 !important; 
-    }
+        .dark .nav-active { 
+            background-color: #1e293b !important; 
+            color: #ef4444 !important; 
+        }
 
-    /* 4. STATUS-PUNKT (GLOW) */
-    .glow-green {
-        background-color: var(--status-green) !important;
-        box-shadow: 0 0 12px var(--status-green), 0 0 4px var(--status-green);
-    }
+        /* STATUS-PUNKT (GLOW) */
+        .glow-green {
+            background-color: var(--status-green) !important;
+            box-shadow: 0 0 12px var(--status-green), 0 0 4px var(--status-green);
+        }
 
-    /* 5. TABELLEN-OPTIMIERUNG (KEIN TEXTUMBRUCH AM HANDY) */
-    td { white-space: nowrap; }
-    
-    /* Scrollbar-Design für Tabellen */
-    .overflow-x-auto::-webkit-scrollbar { height: 4px; }
-    .overflow-x-auto::-webkit-scrollbar-thumb { 
-        background: #cbd5e1; 
-        border-radius: 10px; 
-    }
-</style>
+        /* TABELLEN-OPTIMIERUNG */
+        td { white-space: nowrap; }
+        
+        .overflow-x-auto::-webkit-scrollbar { height: 4px; }
+        .overflow-x-auto::-webkit-scrollbar-thumb { 
+            background: #cbd5e1; 
+            border-radius: 10px; 
+        }
+    </style>
 </head>
 <body class="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 min-h-screen pb-32">
 
@@ -98,4 +113,5 @@
     <script src="script.js"></script>
 </body>
 </html>
+
 
