@@ -165,20 +165,53 @@ function showPage(page) {
     content.innerHTML = html;
 }
   if (page === 'personal') {
-    let html = '<h2 class="text-xl font-black mb-4 uppercase italic">Mannschaft LG13</h2><div class="grid gap-2">';
+    // 1. Zähl-Logik für die Spalte "Abteilung"
+    const abtZaehler = {};
     globalData.personnel.forEach(p => {
-      html += `
-        <div class="bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm flex justify-between items-center">
-          <div>
-            <p class="font-bold text-slate-900 dark:text-white">${p.Vorname} ${p.Nachname}</p>
-            <p class="text-[10px] text-slate-500 uppercase tracking-widest">${p.Dienstgrad || 'Feuerwehr'}</p>
-          </div>
-          <div class="w-2 h-2 rounded-full bg-green-500"></div>
-        </div>`;
+        const abt = p["Abteilung"] || 'Nicht zugeordnet';
+        abtZaehler[abt] = (abtZaehler[abt] || 0) + 1;
     });
+
+    // 2. HTML für die Zusammenfassung (Badges) bauen
+    let personalStatsHtml = '<div class="flex flex-wrap gap-2 mb-6">';
+    
+    for (const [abteilung, anzahl] of Object.entries(abtZaehler)) {
+        personalStatsHtml += `
+            <div class="bg-white dark:bg-slate-800 px-3 py-2 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 flex items-center gap-2">
+                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-500">${abteilung}</span>
+                <span class="bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300 px-2 py-0.5 rounded-lg font-black text-xs">${anzahl}</span>
+            </div>`;
+    }
+    personalStatsHtml += '</div>';
+
+    // 3. Die Personalseite zusammenbauen
+    let html = `
+        <h2 class="text-xl font-black mb-4 uppercase italic text-slate-900 dark:text-white">Personal & Abteilungen</h2>
+        ${personalStatsHtml} 
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+    `;
+
+    // Liste der Personen (alphabetisch nach Nachname sortiert, falls vorhanden)
+    const sortiertesPersonal = [...globalData.personnel].sort((a, b) => {
+        return (a.Nachname || "").localeCompare(b.Nachname || "");
+    });
+
+    sortiertesPersonal.forEach(p => {
+        html += `
+            <div class="bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border-l-4 border-slate-300 flex justify-between items-center">
+                <div>
+                    <p class="font-bold text-slate-900 dark:text-white leading-tight">${p.Vorname || ''} ${p.Nachname || 'Unbekannt'}</p>
+                    <p class="text-[10px] text-slate-500 uppercase mt-1 font-medium">${p.Abteilung || ''}</p>
+                </div>
+                <div class="text-[10px] font-bold text-slate-400 bg-slate-50 dark:bg-slate-700/50 px-2 py-1 rounded">
+                    ${p.Funktion || 'Mitglied'}
+                </div>
+            </div>`;
+    });
+
     html += '</div>';
     content.innerHTML = html;
-  }
+}
 // Nach dem Wechseln: Scrolle nach ganz oben
   window.scrollTo(0, 0);
 }
@@ -192,6 +225,7 @@ function toggleDarkMode() {
 // Damit die Buttons die Funktionen unter Garantie finden
 window.showPage = showPage;
 window.toggleDarkMode = toggleDarkMode;
+
 
 
 
