@@ -429,11 +429,14 @@ const Core = {
 // Start & Service Worker
 Core.service.fetchData();
 
+/* Deaktiviere das hier kurzzeitig, wenn du viel entwickelst:
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js').catch(console.error);
     });
 }
+*/
+
 
 
 
