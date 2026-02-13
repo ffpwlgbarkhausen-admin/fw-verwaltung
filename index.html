@@ -18,20 +18,24 @@
 <body class="bg-slate-50 dark:bg-black text-slate-900 dark:text-slate-100 min-h-screen pb-10">
 
     <div class="max-w-[1600px] mx-auto px-4 md:px-6 py-6 space-y-6">
-        <header class="bg-white/90 dark:bg-slate-900/90 backdrop-blur-md sticky top-4 z-50 p-3 rounded-[1rem] shadow-sm border border-slate-200/50 dark:border-slate-800 flex flex-col md:flex-row justify-between items-center gap-4">
-            <div class="flex items-center gap-3 px-3">
-                <div class="bg-brandRed px-3 py-1.5 rounded-xl text-white font-black-italic text-sm italic shadow-sm">LG 13</div>
-                <div class="flex items-center">
-                    <h1 class="text-xl font-black-italic italic tracking-tighter">
-                        FW-Verwaltung<span class="text-brandRed relative">Pro<span id="conn-dot" class="absolute -top-1 -right-2 w-2 h-2 rounded-full bg-orange-500 transition-all duration-500 shadow-sm"></span></span>
-                    </h1>
-                </div>
+    <header class="bg-white/90 dark:bg-slate-900/90 backdrop-blur-md sticky top-4 z-40 p-3 rounded-[1rem] shadow-sm border border-slate-200/50 dark:border-slate-800 flex justify-between items-center">
+        <div class="flex items-center gap-3 px-3">
+            <div class="bg-brandRed px-3 py-1.5 rounded-xl text-white font-black-italic text-sm italic shadow-sm">LG 13</div>
+            <div class="flex items-center">
+                <h1 class="text-xl font-black-italic italic tracking-tighter">
+                    FW-Verwaltung<span class="text-brandRed relative">Pro<span id="conn-dot" class="absolute -top-1 -right-2 w-2 h-2 rounded-full bg-orange-500 transition-all duration-500 shadow-sm"></span></span>
+                </h1>
             </div>
-            <nav id="main-nav" class="flex items-center gap-1 bg-slate-100/50 dark:bg-slate-800/50 p-1 rounded-2xl"></nav>
-        </header>
+        </div>
+        
+        <nav id="main-nav-desktop" class="hidden md:flex items-center gap-1 bg-slate-100/50 dark:bg-slate-800/50 p-1 rounded-2xl"></nav>
+    </header>
 
-        <main id="app-viewport" class="space-y-8"></main>
-    </div>
+    <main id="app-viewport" class="space-y-8 pb-24 md:pb-8"></main>
+
+    <nav id="main-nav" class="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-lg border-t border-slate-200 dark:border-slate-800 p-2 pb-8 flex justify-around items-center">
+        </nav>
+</div>
 
     <div id="detail-modal" class="fixed inset-0 z-[100] hidden">
         <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="Core.ui.closeDetail()"></div>
@@ -44,3 +48,4 @@
     <script src="script.js"></script>
 </body>
 </html>
+
