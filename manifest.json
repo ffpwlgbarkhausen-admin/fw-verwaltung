@@ -4,8 +4,8 @@
   "description": "Einsatzverwaltung Löschgruppe 13",
   "start_url": "./index.html",
   "display": "standalone",
+  "theme_color": "#0f172a",
   "background_color": "#0f172a",
-  "theme_color": "#dc2626",
   "icons": [
   {
     "src": "app-icon.png",
