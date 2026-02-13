@@ -165,8 +165,10 @@ function showPage(page) {
     content.innerHTML = html;
 }
   if (page === 'personal') {
-    const pers = globalData.personnel; // Zugriff auf deine Daten
-
+    //const pers = globalData.personnel; // Zugriff auf deine Daten
+    const pers = [...globalData.personnel].sort((a, b) => 
+    (a.Nachname || "").localeCompare(b.Nachname || "")
+);
     // 1. Zähl-Logik für die Statistik (Deine Logik)
     const abtZaehler = {};
     pers.forEach(p => {
@@ -244,6 +246,7 @@ function filterPersonnelTable() {
         }
     }
 }
+
 
 
 
