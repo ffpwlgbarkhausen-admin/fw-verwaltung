@@ -67,18 +67,41 @@ function showPage(page) {
   console.log("Wechsle zur Seite:", page); // Zum Testen in der Konsole
 
   if (page === 'dashboard') {
+    // 1. Einsatz-Arten zählen (Feuer, BMA, TH...)
+    const counts = {};
+    globalData.operations.forEach(e => {
+        const art = e["Einsatz Art"] || 'Sonstige';
+        counts[art] = (counts[art] || 0) + 1;
+    });
+
+    // 2. Den HTML-Code für die kleinen Statistik-Zeilen bauen
+    let statsRows = "";
+    for (const [name, zahl] of Object.entries(counts)) {
+        statsRows += `
+            <div class="flex justify-between items-center text-[11px] pt-2 mt-2 border-t border-slate-50 dark:border-slate-700/50">
+                <span class="text-slate-500 font-bold uppercase tracking-tighter">${name}</span>
+                <span class="font-black text-red-600 dark:text-red-400">${zahl}</span>
+            </div>`;
+    }
+
+    // 3. Alles im Dashboard anzeigen
     content.innerHTML = `
       <div class="space-y-4">
         <div class="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border-l-4 border-red-600">
           <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Einsätze 2026</p>
-          <p class="text-5xl font-black text-slate-900 dark:text-white">${globalData.operations.length}</p>
+          <p class="text-5xl font-black text-slate-900 dark:text-white mb-2">${globalData.operations.length}</p>
+          
+          <div class="mt-2">
+            ${statsRows}
+          </div>
         </div>
+
         <div class="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border-l-4 border-slate-400">
           <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Personal</p>
           <p class="text-5xl font-black text-slate-900 dark:text-white">${globalData.personnel.length}</p>
         </div>
       </div>`;
-  }
+}
   if (page === 'einsaetze') {
     // 1. Zähl-Logik (Strichliste für deine Spalte "Einsatz Art")
     const zaehler = {};
@@ -154,6 +177,7 @@ function toggleDarkMode() {
 // Damit die Buttons die Funktionen unter Garantie finden
 window.showPage = showPage;
 window.toggleDarkMode = toggleDarkMode;
+
 
 
 
