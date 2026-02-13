@@ -1,18 +1,10 @@
-const CACHE_NAME = 'fw-pro-vfinal';
-const ASSETS = [
-  './',
-  './index.html',
-  './script.js'
-];
+const CACHE_NAME = 'fw-pro-v1';
+const assets = ['./', './index.html', './style.css', './script.js', './manifest.json'];
 
-self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
-  );
+self.addEventListener('install', (evt) => {
+  evt.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(assets)));
 });
 
-self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    caches.match(event.request).then((res) => res || fetch(event.request))
-  );
+self.addEventListener('fetch', (evt) => {
+  evt.respondWith(caches.match(evt.request).then((res) => res || fetch(evt.request)));
 });
