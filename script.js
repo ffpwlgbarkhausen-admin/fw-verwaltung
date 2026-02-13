@@ -122,119 +122,128 @@ const Core = {
 
     views: {
         dashboard: () => {
-            const rawOps = Core.state.data.operations;
-            const pers = Core.state.data.personnel;
-            const currentYear = new Date().getFullYear().toString();
-            const uniqueOpsMap = new Map();
-            const filteredRawOps = [];
+    const rawOps = Core.state.data.operations;
+    const pers = Core.state.data.personnel;
+    const currentYear = new Date().getFullYear().toString();
+    
+    // Performance-Optimierung: Vorab-Initialisierung der festen Kategorien
+    const abteilungStats = { "A": 0, "UA": 0, "TV": 0 };
+    const artStats = { "Feuer": 0, "TH": 0, "BMA": 0, "sonstige/HRM": 0 };
+    let errorCount = 0;
+    
+    const uniqueOpsMap = new Map();
+    const ranking = {};
+    let totalUniqueOps = 0;
 
-            // Datenvorbereitung
-            rawOps.forEach(o => {
-                const d = new Date(o.Datum);
-                const itemYear = d.getFullYear().toString();
-                if (itemYear === currentYear) {
-                    filteredRawOps.push(o); 
-                    const key = `E-${o.Einsatznummer}_D-${o.Datum}`;
-                    if (!uniqueOpsMap.has(key)) uniqueOpsMap.set(key, o);
+    // 1. SCHLEIFE: Personal (nur einmal durchlaufen)
+    pers.forEach(p => {
+        const abt = (p.Abteilung || "").trim().toUpperCase();
+        if (abteilungStats.hasOwnProperty(abt)) abteilungStats[abt]++;
+    });
+
+    // 2. SCHLEIFE: Einsätze (Filterung und Statistik in einem Durchgang)
+    rawOps.forEach(o => {
+        const d = new Date(o.Datum);
+        if (d.getFullYear().toString() === currentYear) {
+            // Ranking-Zählung (für Top 3)
+            if (o.Name && o.Vorname) {
+                const nameKey = `${o.Vorname} ${o.Name}`;
+                ranking[nameKey] = (ranking[nameKey] || 0) + 1;
+            }
+
+            // Eindeutige Einsätze zählen & Typen-Statistik
+            const opKey = `E-${o.Einsatznummer}_D-${o.Datum}`;
+            if (!uniqueOpsMap.has(opKey)) {
+                uniqueOpsMap.set(opKey, true);
+                totalUniqueOps++;
+                
+                const art = (o["Einsatz Art"] || "").trim(); // Kein Fallback auf "Sonstige" mehr
+                if (artStats.hasOwnProperty(art)) {
+                    artStats[art]++;
+                } else {
+                    errorCount++; // Alles was nicht Feuer, TH, BMA oder sonstige/HRM ist
                 }
-            });
+            }
+        }
+    });
 
-            const uniqueOps = Array.from(uniqueOpsMap.values());
+    // Ranking sortieren (Top 3)
+    const top3 = Object.entries(ranking).sort((a, b) => b[1] - a[1]).slice(0, 3);
+
+    return `
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
             
-            // Statistik: Abteilungen
-            const abteilungStats = { "A": 0, "UA": 0, "TV": 0 };
-            pers.forEach(p => {
-                const abt = String(p.Abteilung || "").toUpperCase().trim();
-                if (abteilungStats.hasOwnProperty(abt)) abteilungStats[abt]++;
-            });
-
-            // Statistik: Einsatzarten (mit Mapping für Sonstige/HRM)
-            const artStats = {};
-            uniqueOps.forEach(o => {
-                const art = o["Einsatz Art"] || "Sonstige";
-                artStats[art] = (artStats[art] || 0) + 1;
-            });
-
-            // Statistik: Ranking
-            const ranking = {};
-            filteredRawOps.forEach(o => { 
-                if(o.Name && o.Vorname) {
-                    const key = `${o.Vorname} ${o.Name}`;
-                    ranking[key] = (ranking[key] || 0) + 1; 
-                }
-            });
-            const top3 = Object.entries(ranking).sort((a,b) => b[1]-a[1]).slice(0,3);
-
-            return `
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
-                    
-                    <div class="stat-card border-l-4 border-l-brandRed">
-                        <p class="text-[10px] font-bold text-slate-400 uppercase italic">Personalstand</p>
-                        <div class="flex items-baseline gap-2">
-                            <h2 class="text-4xl font-black-italic italic">${pers.length}</h2>
-                            <span class="text-[10px] font-black text-slate-400 uppercase tracking-tighter italic font-bold">Gesamt</span>
-                        </div>
-                        <div class="mt-4 grid grid-cols-3 gap-2">
-                            <div class="bg-slate-50 dark:bg-slate-800 p-2 rounded-xl text-center">
-                                <p class="text-[11px] font-bold text-brandRed italic uppercase">A</p>
-                                <p class="text-lg font-black italic">${abteilungStats["A"]}</p>
-                            </div>
-                            <div class="bg-slate-50 dark:bg-slate-800 p-2 rounded-xl text-center">
-                                <p class="text-[11px] font-bold text-slate-500 italic uppercase">UA</p>
-                                <p class="text-lg font-black italic">${abteilungStats["UA"]}</p>
-                            </div>
-                            <div class="bg-slate-50 dark:bg-slate-800 p-2 rounded-xl text-center">
-                                <p class="text-[11px] font-bold text-slate-500 italic uppercase">TV</p>
-                                <p class="text-lg font-black italic">${abteilungStats["TV"]}</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="stat-card border-l-4 border-l-brandRed">
-                        <p class="text-[10px] font-bold text-slate-400 uppercase italic">Einsätze ${currentYear}</p>
-                        <div class="flex items-baseline gap-2">
-                            <h2 class="text-4xl font-black-italic italic">${uniqueOps.length}</h2>
-                            <span class="text-[10px] font-black text-slate-400 uppercase tracking-tighter italic font-bold">Gesamt</span>
-                        </div>
-                        <div class="mt-4 grid grid-cols-2 gap-2">
-                            <div class="bg-slate-50 dark:bg-slate-800 p-2 rounded-xl text-center">
-                                <p class="text-[11px] font-bold text-brandRed italic uppercase">Feuer</p>
-                                <p class="text-lg font-black italic">${artStats["Feuer"] || 0}</p>
-                            </div>
-                            <div class="bg-slate-50 dark:bg-slate-800 p-2 rounded-xl text-center">
-                                <p class="text-[11px] font-bold text-slate-500 italic uppercase">TH</p>
-                                <p class="text-lg font-black italic">${artStats["TH"] || 0}</p>
-                            </div>
-                            <div class="bg-slate-50 dark:bg-slate-800 p-2 rounded-xl text-center">
-                                <p class="text-[11px] font-bold text-slate-500 italic uppercase">BMA</p>
-                                <p class="text-lg font-black italic">${artStats["BMA"] || 0}</p>
-                            </div>
-                            <div class="bg-slate-50 dark:bg-slate-800 p-2 rounded-xl text-center flex flex-col justify-center">
-                                <p class="text-[9px] font-bold text-slate-500 italic uppercase leading-none">Sonstige/HRM</p>
-                                <p class="text-lg font-black italic">${artStats["sonstige/HRM"] || artStats["Sonstige"] || 0}</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="stat-card border-l-4 border-l-brandRed">
-                        <p class="text-[10px] font-bold text-slate-400 uppercase italic">Top 3 Kräfte (Einsätze)</p>
-                        <div class="mt-4 grid grid-cols-1 gap-2">
-                            ${top3.map(([name, count], idx) => `
-                                <div class="bg-slate-50 dark:bg-slate-800 p-2 px-3 rounded-xl flex items-center justify-between">
-                                    <div class="flex items-center gap-3">
-                                        <span class="text-brandRed font-black italic text-lg">#${idx + 1}</span>
-                                        <p class="text-[11px] font-bold uppercase italic truncate w-32">${name}</p>
-                                    </div>
-                                    <p class="text-lg font-black italic">${count}</p>
-                                </div>
-                            `).join('')}
-                            ${top3.length === 0 ? '<p class="text-[10px] text-slate-400 italic">Keine Daten verfügbar</p>' : ''}
-                        </div>
-                    </div>
-
+            <div class="stat-card border-l-4 border-l-brandRed">
+                <p class="text-[10px] font-bold text-slate-400 uppercase italic">Personalstand</p>
+                <div class="flex items-baseline gap-2">
+                    <h2 class="text-4xl font-black-italic italic">${pers.length}</h2>
+                    <span class="text-[10px] font-black text-slate-400 uppercase tracking-tighter italic font-bold">Gesamt</span>
                 </div>
-            `;
-        },
+                <div class="mt-4 grid grid-cols-3 gap-2">
+                    <div class="bg-slate-50 dark:bg-slate-800 p-2 rounded-xl text-center">
+                        <p class="text-[11px] font-bold text-brandRed italic uppercase">A</p>
+                        <p class="text-lg font-black italic">${abteilungStats["A"]}</p>
+                    </div>
+                    <div class="bg-slate-50 dark:bg-slate-800 p-2 rounded-xl text-center">
+                        <p class="text-[11px] font-bold text-slate-500 italic uppercase">UA</p>
+                        <p class="text-lg font-black italic">${abteilungStats["UA"]}</p>
+                    </div>
+                    <div class="bg-slate-50 dark:bg-slate-800 p-2 rounded-xl text-center">
+                        <p class="text-[11px] font-bold text-slate-500 italic uppercase">TV</p>
+                        <p class="text-lg font-black italic">${abteilungStats["TV"]}</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-card border-l-4 border-l-brandRed">
+                <p class="text-[10px] font-bold text-slate-400 uppercase italic">Einsätze ${currentYear}</p>
+                <div class="flex items-baseline gap-2">
+                    <h2 class="text-4xl font-black-italic italic">${totalUniqueOps}</h2>
+                    <span class="text-[10px] font-black text-slate-400 uppercase tracking-tighter italic font-bold">Gesamt</span>
+                </div>
+                <div class="mt-4 grid grid-cols-2 gap-2">
+                    <div class="bg-slate-50 dark:bg-slate-800 p-2 rounded-xl text-center">
+                        <p class="text-[11px] font-bold text-brandRed italic uppercase">Feuer</p>
+                        <p class="text-lg font-black italic">${artStats["Feuer"]}</p>
+                    </div>
+                    <div class="bg-slate-50 dark:bg-slate-800 p-2 rounded-xl text-center">
+                        <p class="text-[11px] font-bold text-slate-500 italic uppercase">TH</p>
+                        <p class="text-lg font-black italic">${artStats["TH"]}</p>
+                    </div>
+                    <div class="bg-slate-50 dark:bg-slate-800 p-2 rounded-xl text-center">
+                        <p class="text-[11px] font-bold text-slate-500 italic uppercase">BMA</p>
+                        <p class="text-lg font-black italic">${artStats["BMA"]}</p>
+                    </div>
+                    <div class="bg-slate-50 dark:bg-slate-800 p-2 rounded-xl text-center flex flex-col justify-center">
+                        <p class="text-[9px] font-bold text-slate-500 italic uppercase leading-none">Sonstige/HRM</p>
+                        <p class="text-lg font-black italic">${artStats["sonstige/HRM"]}</p>
+                    </div>
+                </div>
+                ${errorCount > 0 ? `
+                    <div class="mt-2 p-1 bg-red-50 dark:bg-red-900/20 rounded border border-red-100 dark:border-red-800/40 text-center">
+                        <p class="text-[8px] font-bold text-red-600 uppercase italic">! ${errorCount} Unbekannte Typen im Sheet</p>
+                    </div>
+                ` : ''}
+            </div>
+
+            <div class="stat-card border-l-4 border-l-brandRed">
+                <p class="text-[10px] font-bold text-slate-400 uppercase italic">Top 3 Kräfte (Einsätze)</p>
+                <div class="mt-4 grid grid-cols-1 gap-2">
+                    ${top3.map(([name, count], idx) => `
+                        <div class="bg-slate-50 dark:bg-slate-800 p-2 px-3 rounded-xl flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <span class="text-brandRed font-black italic text-lg">#${idx + 1}</span>
+                                <p class="text-[11px] font-bold uppercase italic truncate w-32">${name}</p>
+                            </div>
+                            <p class="text-lg font-black italic">${count}</p>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+
+        </div>
+    `;
+},
         personnel: () => {
             const pers = Core.state.data.personnel;
             const abteilungStats = { "A": 0, "UA": 0, "TV": 0 };
@@ -413,6 +422,7 @@ if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('./sw.js').catch(console.error);
     });
 }
+
 
 
 
