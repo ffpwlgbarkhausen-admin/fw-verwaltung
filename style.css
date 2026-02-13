@@ -1,0 +1,37 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap');
+
+body { 
+    font-family: 'Inter', sans-serif; 
+    -webkit-tap-highlight-color: transparent; 
+}
+
+.font-black-italic { 
+    font-weight: 900; 
+    font-style: italic; 
+    text-transform: uppercase; 
+    letter-spacing: -0.02em; 
+}
+
+.nav-active { 
+    @apply bg-white dark:bg-slate-800 text-brandRed shadow-md border border-slate-200 dark:border-slate-700; 
+}
+
+.stat-card { 
+    @apply bg-white dark:bg-slate-900 p-6 rounded-[1rem] border border-slate-100 dark:border-slate-800 shadow-sm transition-all hover:shadow-md; 
+}
+
+.sticky-header th { 
+    position: sticky; 
+    top: 0; 
+    z-index: 10; 
+    @apply bg-slate-50 dark:bg-slate-800 p-3 text-[10px] uppercase font-black italic tracking-widest border-b-2 border-slate-200 dark:border-slate-700; 
+}
+
+.data-row { 
+    @apply border-b border-slate-50 dark:border-slate-800/50 hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors; 
+}
+
+/* Custom Scrollbar für Modals */
+.custom-scrollbar::-webkit-scrollbar { width: 4px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.custom-scrollbar::-webkit-scrollbar-thumb { @apply bg-slate-200 dark:bg-slate-700 rounded-full; }
