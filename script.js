@@ -104,21 +104,25 @@ const Core = {
     },
 
     router: {
-        navigate(id) {
-            Core.state.activeModule = id;
-            this.render();
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        },
-        render() {
-            const nav = document.getElementById('main-nav');
+    navigate(id) {
+        Core.state.activeModule = id;
+        this.render();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    },
+    render() {
+        // Wir suchen das mobile Menü
+        const nav = document.getElementById('main-nav');
+        if (nav) {
             nav.innerHTML = Core.modules.map(m => `
                 <button onclick="Core.router.navigate('${m.id}')" 
-                        class="px-4 py-2 md:px-6 rounded-md text-[10px] font-black uppercase tracking-widest transition-all ${Core.state.activeModule === m.id ? 'nav-active' : 'text-slate-500 hover:text-slate-900'}">
-                    ${m.label}
+                        class="flex-1 flex flex-col items-center py-2 transition-all ${Core.state.activeModule === m.id ? 'text-brandRed scale-110' : 'text-slate-500'}">
+                    <span class="text-[10px] font-black uppercase tracking-tighter">${m.label}</span>
+                    ${Core.state.activeModule === m.id ? '<div class="w-1.5 h-1.5 bg-brandRed rounded-full mt-1"></div>' : ''}
                 </button>`).join('');
-            Core.ui.render();
         }
-    },
+        Core.ui.render();
+    }
+},
 
     views: {
         dashboard: () => {
@@ -436,6 +440,7 @@ if ('serviceWorker' in navigator) {
     });
 }
 */
+
 
 
 
