@@ -80,8 +80,35 @@ function showPage(page) {
       </div>`;
   }
   if (page === 'einsaetze') {
-    let html = '<h2 class="text-xl font-black mb-4 uppercase italic">Einsatzliste 2026</h2><div class="space-y-3">';
-    // Neueste Einsätze zuerst anzeigen
+    // 1. Zähl-Logik (Strichliste für deine Spalte "Einsatz Art")
+    const zaehler = {};
+    globalData.operations.forEach(e => {
+        const art = e["Einsatz Art"] || 'Sonstige';
+        // Erhöht die Zahl für "Feuer", "BMA" etc. um 1
+        zaehler[art] = (zaehler[art] || 0) + 1;
+    });
+
+    // 2. HTML für die Zusammenfassung (Badges) bauen
+    let zusammenfassungHtml = '<div class="flex flex-wrap gap-2 mb-6">';
+    
+    // Wir gehen alle gefundenen Arten (Feuer, BMA...) durch
+    for (const [art, anzahl] of Object.entries(zaehler)) {
+        zusammenfassungHtml += `
+            <div class="bg-white dark:bg-slate-800 px-3 py-2 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 flex items-center gap-2">
+                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-500">${art}</span>
+                <span class="bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400 px-2 py-0.5 rounded-lg font-black text-xs">${anzahl}</span>
+            </div>`;
+    }
+    zusammenfassungHtml += '</div>';
+
+    // 3. Die eigentliche Seite zusammenbauen
+    let html = `
+        <h2 class="text-xl font-black mb-4 uppercase italic text-slate-900 dark:text-white">Einsatzstatistik & Liste</h2>
+        ${zusammenfassungHtml} 
+        <div class="space-y-3">
+    `;
+
+    // Liste sortieren (Neueste oben)
     const sortiert = [...globalData.operations].sort((a, b) => b.Einsatznummer - a.Einsatznummer);
     
     sortiert.forEach(e => {
@@ -92,12 +119,13 @@ function showPage(page) {
             <span class="text-[10px] text-slate-500">${e.Datum}</span>
           </div>
           <p class="font-bold text-slate-900 dark:text-white leading-tight">${e.Stichwort || 'Einsatz'}</p>
-          <p class="text-[10px] text-slate-500 uppercase mt-1">${e["Einsatz Art"] || ''}</p>
+          <p class="text-[10px] text-red-600 font-bold uppercase mt-1">${e["Einsatz Art"] || ''}</p>
         </div>`;
     });
+    
     html += '</div>';
     content.innerHTML = html;
-  }
+}
   if (page === 'personal') {
     let html = '<h2 class="text-xl font-black mb-4 uppercase italic">Mannschaft LG13</h2><div class="grid gap-2">';
     globalData.personnel.forEach(p => {
@@ -126,6 +154,7 @@ function toggleDarkMode() {
 // Damit die Buttons die Funktionen unter Garantie finden
 window.showPage = showPage;
 window.toggleDarkMode = toggleDarkMode;
+
 
 
 
