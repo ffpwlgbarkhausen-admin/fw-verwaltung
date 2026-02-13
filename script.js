@@ -283,17 +283,29 @@ const Core = {
 
     ui: {
         // --- NEU: Diese Funktion formatiert das Datum global ---
+        // --- Optimierte Datums-Formatierung ---
         formatDate(value) {
             if (!value || value === '---' || String(value).trim() === '') return '---';
+            
+            // 1. Wenn es bereits ein Date-Objekt ist (von Google Apps Script oft so geliefert)
             const date = new Date(value);
-            // Prüfen, ob es ein gültiges Datum ist
-            if (!isNaN(date.getTime()) && String(value).includes('-')) {
+            
+            // 2. Prüfen, ob die Umwandlung gültig war
+            const isValidDate = !isNaN(date.getTime());
+            
+            // 3. Sicherheits-Check: Sieht der Wert wie ein Datum aus? (DD.MM.YYYY oder YYYY-MM-DD)
+            const datePattern = /^\d{1,4}[.\-]\d{1,2}[.\-]\d{1,4}/;
+            const looksLikeDate = datePattern.test(String(value));
+
+            if (isValidDate && looksLikeDate) {
                 return date.toLocaleDateString('de-DE', {
                     day: '2-digit',
                     month: '2-digit',
                     year: 'numeric'
                 });
             }
+            
+            // Falls es kein Datum ist (z.B. ein Name), gib den Wert einfach zurück
             return value;
         },
 
@@ -422,6 +434,7 @@ if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('./sw.js').catch(console.error);
     });
 }
+
 
 
 
