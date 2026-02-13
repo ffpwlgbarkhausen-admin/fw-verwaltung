@@ -3,133 +3,44 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>FW-Verwaltung Pro</title>
-
+    <title>FW-Verwaltung Pro | LG13 Core</title>
+    
     <link rel="manifest" href="manifest.json">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="theme-color" content="#0f172a">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-
-    <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
-                    .then(reg => console.log('✅ SW registriert'))
-                    .catch(err => console.log('❌ SW Fehler', err));
-            });
-        }
-    </script>
-
+    <link rel="stylesheet" href="style.css">
     <script src="https://cdn.tailwindcss.com"></script>
-
     <script>
         tailwind.config = {
-            darkMode: 'class',
+            darkMode: 'media',
             theme: { extend: { colors: { brandRed: '#dc2626' } } }
         }
     </script>
-
-    <style>
-        /* SCHRIFTARTEN & BASIS */
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap');
-        
-        :root {
-            --brandRed: #dc2626;
-            --status-green: #22c55e;
-        }
-
-        body { 
-            font-family: 'Inter', sans-serif; 
-            -webkit-tap-highlight-color: transparent; 
-        }
-
-        /* LOGO- & ÜBERSCHRIFT-DESIGN */
-        .font-black-italic { 
-            font-weight: 900; 
-            font-style: italic; 
-            text-transform: uppercase; 
-            letter-spacing: -0.02em; 
-        }
-
-        .animate-logo {
-            display: inline-block;
-            animation: fadeIn 1.2s ease-out forwards;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(2px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* NAVIGATION (AKTIVER ZUSTAND) */
-        .nav-active { 
-            background-color: white !important; 
-            color: var(--brandRed) !important; 
-            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1); 
-        }
-
-        .dark .nav-active { 
-            background-color: #1e293b !important; 
-            color: #ef4444 !important; 
-        }
-
-        /* STATUS-PUNKT (GLOW) */
-        .glow-green {
-            background-color: var(--status-green) !important;
-            box-shadow: 0 0 12px var(--status-green), 0 0 4px var(--status-green);
-        }
-
-        /* TABELLEN-OPTIMIERUNG */
-        td { white-space: nowrap; }
-        
-        .overflow-x-auto::-webkit-scrollbar { height: 4px; }
-        .overflow-x-auto::-webkit-scrollbar-thumb { 
-            background: #cbd5e1; 
-            border-radius: 10px; 
-        }
-    </style>
 </head>
-<body class="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 min-h-screen">
+<body class="bg-slate-50 dark:bg-black text-slate-900 dark:text-slate-100 min-h-screen pb-10">
 
-    <header class="bg-white/90 dark:bg-slate-900/90 backdrop-blur-md sticky top-4 z-50 p-3 rounded-[1rem] shadow-sm border border-slate-200/50 dark:border-slate-800 flex flex-col md:flex-row justify-between items-center gap-4 mx-4 mt-4">
-        <div class="flex items-center gap-3 px-3">
-            <div class="bg-brandRed px-3 py-1.5 rounded-xl text-white font-black-italic text-sm italic shadow-sm">LG 13</div>
-            
-            <div class="flex items-center">
-                <h1 class="text-xl font-black-italic italic tracking-tighter">
-                    FW-Verwaltung<span class="text-brandRed relative">Pro
-                        <span id="conn-dot" class="absolute -top-1 -right-2 w-2 h-2 rounded-full bg-orange-500 transition-all duration-500 shadow-sm"></span>
-                    </span>
-                </h1>
+    <div class="max-w-[1600px] mx-auto px-4 md:px-6 py-6 space-y-6">
+        <header class="bg-white/90 dark:bg-slate-900/90 backdrop-blur-md sticky top-4 z-50 p-3 rounded-[1rem] shadow-sm border border-slate-200/50 dark:border-slate-800 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-3 px-3">
+                <div class="bg-brandRed px-3 py-1.5 rounded-xl text-white font-black-italic text-sm italic shadow-sm">LG 13</div>
+                <div class="flex items-center">
+                    <h1 class="text-xl font-black-italic italic tracking-tighter">
+                        FW-Verwaltung<span class="text-brandRed relative">Pro<span id="conn-dot" class="absolute -top-1 -right-2 w-2 h-2 rounded-full bg-orange-500 transition-all duration-500 shadow-sm"></span></span>
+                    </h1>
+                </div>
             </div>
-        </div>
+            <nav id="main-nav" class="flex items-center gap-1 bg-slate-100/50 dark:bg-slate-800/50 p-1 rounded-2xl"></nav>
+        </header>
 
-        <nav id="main-nav" class="flex items-center gap-1 bg-slate-100/50 dark:bg-slate-800/50 p-1 rounded-2xl">
-            </nav>
-    </header>
-
-    <main id="app-viewport" class="max-w-4xl mx-auto px-4 pt-8 pb-20 min-h-screen">
-        <div class="flex items-center justify-center h-[60vh]">
-            <div class="text-center animate-pulse">
-                <div class="w-12 h-12 border-4 border-brandRed border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                <p class="font-black-italic text-slate-400">Initialisierung...</p>
-            </div>
-        </div>
-    </main>
+        <main id="app-viewport" class="space-y-8"></main>
+    </div>
 
     <div id="detail-modal" class="fixed inset-0 z-[100] hidden">
         <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="Core.ui.closeDetail()"></div>
-        <div id="modal-content" class="absolute right-0 top-0 h-full w-full max-w-md bg-white dark:bg-slate-900 shadow-2xl p-8 transform transition-transform duration-300 translate-x-full overflow-y-auto">
-            </div>
+        <div class="absolute right-0 top-0 h-full w-full max-w-md bg-white dark:bg-slate-900 shadow-2xl p-8 transform transition-transform duration-300 translate-x-full" id="modal-content">
+            <div id="modal-body"></div>
+            <button onclick="Core.ui.closeDetail()" class="mt-8 w-full py-3 bg-slate-100 dark:bg-slate-800 rounded-xl font-black-italic italic uppercase text-sm">Schließen</button>
+        </div>
     </div>
 
     <script src="script.js"></script>
 </body>
 </html>
-
-
-
-
-
-
-
