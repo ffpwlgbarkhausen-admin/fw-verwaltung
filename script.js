@@ -35,18 +35,20 @@ const Core = {
     },
 
     ui: {
+        // Optimiert für den Header-Nav
         renderNav() {
             const nav = document.getElementById('main-nav');
+            if(!nav) return;
             nav.innerHTML = Core.modules.map(m => `
                 <button onclick="Core.router.navigate('${m.id}')" 
-                        class="flex-1 flex flex-col items-center py-2 rounded-2xl transition-all ${Core.state.activeModule === m.id ? 'nav-active' : 'text-slate-400'}">
-                    <span class="text-xl">${m.icon}</span>
-                    <span class="text-[9px] font-black uppercase mt-1">${m.label}</span>
+                        class="px-4 py-1.5 rounded-xl text-[10px] font-black-italic transition-all duration-300 ${Core.state.activeModule === m.id ? 'nav-active' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'}">
+                    ${m.label}
                 </button>
             `).join('');
         },
 
         renderTable(title, schema, data) {
+            if (!data || data.length === 0) return `<p class="p-8 text-center text-slate-400 italic">Keine Daten vorhanden.</p>`;
             return `
                 <div class="overflow-x-auto bg-white dark:bg-slate-800 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-700">
                     <table class="w-full text-left border-collapse">
@@ -57,7 +59,8 @@ const Core = {
                         </thead>
                         <tbody>
                             ${data.map(row => `
-                                <tr onclick='Core.ui.showDetail("${title}", ${JSON.stringify(row)})' class="border-t border-slate-100 dark:border-slate-700 hover:bg-slate-50 transition-colors cursor-pointer">
+                                <tr onclick='Core.ui.showDetail("${title}", ${JSON.stringify(row).replace(/'/g, "&apos;")})' 
+                                    class="border-t border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors cursor-pointer">
                                     ${schema.map(key => `<td class="p-4 text-sm font-semibold">${row[key] || '-'}</td>`).join('')}
                                 </tr>
                             `).join('')}
@@ -70,13 +73,15 @@ const Core = {
             const modal = document.getElementById('detail-modal');
             const content = document.getElementById('modal-content');
             content.innerHTML = `
-                <button onclick="Core.ui.closeDetail()" class="mb-8 text-brandRed font-black-italic">← Schließen</button>
-                <h2 class="text-3xl font-black-italic mb-8">${title}</h2>
-                <div class="space-y-4">
+                <button onclick="Core.ui.closeDetail()" class="mb-8 text-brandRed font-black-italic flex items-center gap-2">
+                    <span class="text-xl">←</span> Schließen
+                </button>
+                <h2 class="text-3xl font-black-italic mb-8 animate-logo">${title} Details</h2>
+                <div class="space-y-3">
                     ${Object.entries(data).map(([k, v]) => `
-                        <div class="p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl">
-                            <p class="text-[10px] font-black text-slate-400 uppercase">${k}</p>
-                            <p class="font-bold text-slate-900 dark:text-white">${v}</p>
+                        <div class="p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700/50">
+                            <p class="text-[10px] font-black text-slate-400 uppercase italic mb-1">${k}</p>
+                            <p class="font-bold text-slate-900 dark:text-white">${v || 'Keine Angabe'}</p>
                         </div>
                     `).join('')}
                 </div>`;
@@ -99,20 +104,29 @@ const Core = {
             const vp = document.getElementById('app-viewport');
             Core.ui.renderNav();
 
+            // Die Überschriften nutzen jetzt 'animate-logo' für den Fade-In Effekt
             if (Core.state.activeModule === 'dashboard') {
-                vp.innerHTML = `<h1 class="text-4xl font-black-italic mb-8">Übersicht</h1>
-                                <div class="grid grid-cols-1 gap-4">
-                                    <div class="bg-white dark:bg-slate-800 p-8 rounded-[2rem] shadow-sm border-l-8 border-brandRed">
-                                        <p class="font-black-italic text-slate-400">Personal</p>
-                                        <p class="text-6xl font-black italic">${Core.state.data.personnel.length}</p>
-                                    </div>
-                                </div>`;
+                vp.innerHTML = `
+                    <h1 class="text-4xl font-black-italic mb-8 animate-logo">Übersicht</h1>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-white">
+                        <div class="bg-slate-900 dark:bg-brandRed p-8 rounded-[2rem] shadow-xl relative overflow-hidden group">
+                            <div class="relative z-10">
+                                <p class="font-black-italic text-white/60">Personal Gesamt</p>
+                                <p class="text-7xl font-black italic mt-2">${Core.state.data.personnel.length}</p>
+                            </div>
+                            <div class="absolute -right-4 -bottom-4 text-900 opacity-10 group-hover:scale-110 transition-transform">
+                                <span class="text-9xl">👥</span>
+                            </div>
+                        </div>
+                    </div>`;
             } else if (Core.state.activeModule === 'personnel') {
-                vp.innerHTML = `<h1 class="text-4xl font-black-italic mb-8">Personal</h1>
-                                ${Core.ui.renderTable("Mitglied", SCHEMA.personnel, Core.state.data.personnel)}`;
+                vp.innerHTML = `
+                    <h1 class="text-4xl font-black-italic mb-8 animate-logo">Personalverwaltung</h1>
+                    ${Core.ui.renderTable("Mitglied", SCHEMA.personnel, Core.state.data.personnel)}`;
             } else if (Core.state.activeModule === 'operations') {
-                vp.innerHTML = `<h1 class="text-4xl font-black-italic mb-8">Einsätze</h1>
-                                ${Core.ui.renderTable("Einsatz", SCHEMA.operations, Core.state.data.operations)}`;
+                vp.innerHTML = `
+                    <h1 class="text-4xl font-black-italic mb-8 animate-logo">Einsatzberichte</h1>
+                    ${Core.ui.renderTable("Einsatz", SCHEMA.operations, Core.state.data.operations)}`;
             }
         }
     }
@@ -120,3 +134,4 @@ const Core = {
 
 // Initialisierung
 Core.service.fetchData();
+
