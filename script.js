@@ -128,6 +128,7 @@ const Core = {
             const uniqueOpsMap = new Map();
             const filteredRawOps = [];
 
+            // Datenvorbereitung
             rawOps.forEach(o => {
                 const d = new Date(o.Datum);
                 const itemYear = d.getFullYear().toString();
@@ -139,19 +140,22 @@ const Core = {
             });
 
             const uniqueOps = Array.from(uniqueOpsMap.values());
+            
+            // Statistik: Abteilungen
             const abteilungStats = { "A": 0, "UA": 0, "TV": 0 };
             pers.forEach(p => {
                 const abt = String(p.Abteilung || "").toUpperCase().trim();
                 if (abteilungStats.hasOwnProperty(abt)) abteilungStats[abt]++;
             });
 
+            // Statistik: Einsatzarten (mit Mapping für Sonstige/HRM)
             const artStats = {};
             uniqueOps.forEach(o => {
                 const art = o["Einsatz Art"] || "Sonstige";
                 artStats[art] = (artStats[art] || 0) + 1;
             });
-            const topArten = Object.entries(artStats).sort((a,b) => b[1]-a[1]).slice(0, 3);
 
+            // Statistik: Ranking
             const ranking = {};
             filteredRawOps.forEach(o => { 
                 if(o.Name && o.Vorname) {
@@ -163,6 +167,7 @@ const Core = {
 
             return `
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
+                    
                     <div class="stat-card border-l-4 border-l-brandRed">
                         <p class="text-[10px] font-bold text-slate-400 uppercase italic">Personalstand</p>
                         <div class="flex items-baseline gap-2">
@@ -191,43 +196,42 @@ const Core = {
                             <h2 class="text-4xl font-black-italic italic">${uniqueOps.length}</h2>
                             <span class="text-[10px] font-black text-slate-400 uppercase tracking-tighter italic font-bold">Gesamt</span>
                         </div>
-                        
-                        <div class="mt-4 space-y-2">
-                            ${topArten.map(([art, count]) => {
-                                // Berechnung der Prozentleiste für das Design
-                                const percent = Math.round((count / uniqueOps.length) * 100);
-                                return `
-                                    <div class="bg-slate-50 dark:bg-slate-800 p-2 px-3 rounded-xl">
-                                        <div class="flex justify-between items-center mb-1">
-                                            <p class="text-[10px] font-bold uppercase italic truncate pr-2">${art}</p>
-                                            <p class="text-[10px] font-black text-brandRed italic">${count}</p>
-                                        </div>
-                                        <div class="w-full bg-slate-200 dark:bg-slate-700 h-1 rounded-full overflow-hidden">
-                                            <div class="bg-brandRed h-full" style="width: ${percent}%"></div>
-                                        </div>
-                                    </div>
-                                `;
-                            }).join('')}
-                            ${topArten.length === 0 ? '<p class="text-[10px] text-slate-400 italic">Keine Einsätze in ${currentYear}</p>' : ''}
+                        <div class="mt-4 grid grid-cols-2 gap-2">
+                            <div class="bg-slate-50 dark:bg-slate-800 p-2 rounded-xl text-center">
+                                <p class="text-[11px] font-bold text-brandRed italic uppercase">Feuer</p>
+                                <p class="text-lg font-black italic">${artStats["Feuer"] || 0}</p>
+                            </div>
+                            <div class="bg-slate-50 dark:bg-slate-800 p-2 rounded-xl text-center">
+                                <p class="text-[11px] font-bold text-slate-500 italic uppercase">TH</p>
+                                <p class="text-lg font-black italic">${artStats["TH"] || 0}</p>
+                            </div>
+                            <div class="bg-slate-50 dark:bg-slate-800 p-2 rounded-xl text-center">
+                                <p class="text-[11px] font-bold text-slate-500 italic uppercase">BMA</p>
+                                <p class="text-lg font-black italic">${artStats["BMA"] || 0}</p>
+                            </div>
+                            <div class="bg-slate-50 dark:bg-slate-800 p-2 rounded-xl text-center flex flex-col justify-center">
+                                <p class="text-[9px] font-bold text-slate-500 italic uppercase leading-none">Sonstige/HRM</p>
+                                <p class="text-lg font-black italic">${artStats["sonstige/HRM"] || artStats["Sonstige"] || 0}</p>
+                            </div>
                         </div>
                     </div>
 
                     <div class="stat-card border-l-4 border-l-brandRed">
                         <p class="text-[10px] font-bold text-slate-400 uppercase italic">Top 3 Kräfte (Einsätze)</p>
-                        <div class="mt-2 space-y-3">
+                        <div class="mt-4 grid grid-cols-1 gap-2">
                             ${top3.map(([name, count], idx) => `
-                                <div class="flex items-center gap-3">
-                                    <div class="w-6 h-6 rounded-lg bg-slate-900 dark:bg-brandRed flex items-center justify-center text-[10px] text-white font-black italic">
-                                        ${idx + 1}
+                                <div class="bg-slate-50 dark:bg-slate-800 p-2 px-3 rounded-xl flex items-center justify-between">
+                                    <div class="flex items-center gap-3">
+                                        <span class="text-brandRed font-black italic text-lg">#${idx + 1}</span>
+                                        <p class="text-[11px] font-bold uppercase italic truncate w-32">${name}</p>
                                     </div>
-                                    <div class="flex-1">
-                                        <p class="text-[11px] font-bold uppercase italic leading-none">${name}</p>
-                                        <p class="text-[9px] text-slate-500 font-bold">${count} Einsätze</p>
-                                    </div>
+                                    <p class="text-lg font-black italic">${count}</p>
                                 </div>
                             `).join('')}
+                            ${top3.length === 0 ? '<p class="text-[10px] text-slate-400 italic">Keine Daten verfügbar</p>' : ''}
                         </div>
                     </div>
+
                 </div>
             `;
         },
@@ -409,5 +413,6 @@ if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('./sw.js').catch(console.error);
     });
 }
+
 
 
