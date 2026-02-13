@@ -1,7 +1,9 @@
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js')
-    .then(() => console.log("Service Worker registriert"))
-    .catch(err => console.log("Service Worker Fehler", err));
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js')
+      .then(reg => console.log('SW registriert', reg))
+      .catch(err => console.log('SW Fehler', err));
+  });
 }
 let globalData = null;
 const BACKEND_URL = "https://script.google.com/macros/s/AKfycbxA8lHhtAXoGKTCkN1s4thQH-qWQYeNS3QkySUDpB-2_3mrAuy2cuuWBy4UjR4xpjeR/exec";
@@ -124,5 +126,6 @@ function toggleDarkMode() {
 // Damit die Buttons die Funktionen unter Garantie finden
 window.showPage = showPage;
 window.toggleDarkMode = toggleDarkMode;
+
 
 
