@@ -184,7 +184,51 @@ const Core = {
                             </div>
                         </div>
                     </div>
+
+                    <div class="stat-card border-l-4 border-l-brandRed">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase italic">Einsätze ${currentYear}</p>
+                        <div class="flex items-baseline gap-2">
+                            <h2 class="text-4xl font-black-italic italic">${uniqueOps.length}</h2>
+                            <span class="text-[10px] font-black text-slate-400 uppercase tracking-tighter italic font-bold">Gesamt</span>
+                        </div>
+                        
+                        <div class="mt-4 space-y-2">
+                            ${topArten.map(([art, count]) => {
+                                // Berechnung der Prozentleiste für das Design
+                                const percent = Math.round((count / uniqueOps.length) * 100);
+                                return `
+                                    <div class="bg-slate-50 dark:bg-slate-800 p-2 px-3 rounded-xl">
+                                        <div class="flex justify-between items-center mb-1">
+                                            <p class="text-[10px] font-bold uppercase italic truncate pr-2">${art}</p>
+                                            <p class="text-[10px] font-black text-brandRed italic">${count}</p>
+                                        </div>
+                                        <div class="w-full bg-slate-200 dark:bg-slate-700 h-1 rounded-full overflow-hidden">
+                                            <div class="bg-brandRed h-full" style="width: ${percent}%"></div>
+                                        </div>
+                                    </div>
+                                `;
+                            }).join('')}
+                            ${topArten.length === 0 ? '<p class="text-[10px] text-slate-400 italic">Keine Einsätze in ${currentYear}</p>' : ''}
+                        </div>
                     </div>
+
+                    <div class="stat-card border-l-4 border-l-brandRed">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase italic">Top 3 Kräfte (Einsätze)</p>
+                        <div class="mt-2 space-y-3">
+                            ${top3.map(([name, count], idx) => `
+                                <div class="flex items-center gap-3">
+                                    <div class="w-6 h-6 rounded-lg bg-slate-900 dark:bg-brandRed flex items-center justify-center text-[10px] text-white font-black italic">
+                                        ${idx + 1}
+                                    </div>
+                                    <div class="flex-1">
+                                        <p class="text-[11px] font-bold uppercase italic leading-none">${name}</p>
+                                        <p class="text-[9px] text-slate-500 font-bold">${count} Einsätze</p>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
             `;
         },
         personnel: () => {
@@ -365,4 +409,5 @@ if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('./sw.js').catch(console.error);
     });
 }
+
 
