@@ -7,11 +7,11 @@
   "background_color": "#0f172a",
   "theme_color": "#dc2626",
   "icons": [
-    {
-      "src": "https://cdn-icons-png.flaticon.com/512/784/784114.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
-    }
-  ]
+  {
+    "src": "app-icon.png",
+    "sizes": "512x512",
+    "type": "image/png",
+    "purpose": "any maskable"
+  }
+]
 }
