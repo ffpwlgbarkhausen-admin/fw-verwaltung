@@ -1,23 +1,17 @@
 {
-  "name": "LG13 PRO Verwaltung",
-  "short_name": "LG13 PRO",
-  "description": "Einsatzverwaltung Löschgruppe 13",
+  "name": "FW-Verwaltung Pro",
+  "short_name": "FW-Mobil",
+  "description": "Mobile Personal- und Einsatzverwaltung",
   "start_url": "./index.html",
   "display": "standalone",
-  "theme_color": "#0f172a",
   "background_color": "#0f172a",
+  "theme_color": "#dc2626",
   "icons": [
-  {
-    "src": "app-icon.png",
-    "sizes": "512x512",
-    "type": "image/png",
-    "purpose": "any"
-  },
-  {
-    "src": "app-icon.png",
-    "sizes": "512x512",
-    "type": "image/png",
-    "purpose": "maskable"
-  }
-]
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/785/785116.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
 }
