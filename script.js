@@ -1,6 +1,46 @@
 const SCHEMA = {
     personnel: ["Pers.Nr.", "Name", "Vorname", "Dienstgrad", "Abteilung", "Eintritt", "Dienstjahre", "Beförderung"],
-    operations: ["Einsatznummer", "Datum", "Einsatz Art", "Stunden", "Erstattung"]
+    operations: ["Einsatznummer", "Datum", "Einsatz Art", "AnzahlPers", "Stunden", "Erstattung"],
+    events: ["Datum", "Thema", "Typ", "Leitung"]
+};
+
+const FW_CONFIG = {
+    "FMA/FFA": { next: "FM/FF", req: ["Grundausbildung"], years: 0 }, // angepasst laut Logik
+    "FM/FF": { next: "OFM/OFF", req: ["Grundausbildung"], years: 2 },
+    "OFM/OFF": { next: "HFM/HFF", req: [], years: 5 },
+    "HFM/HFF": { next: "UBM", req: ["Truppführer"], years: 1 },
+    "UBM": { next: "BM", req: ["Gruppenführer"], years: 2 },
+    "BM": { next: "OBM", req: [], years: 2 },
+    "OBM": { next: "HBM", req: [], years: 5 },
+    "HBM": { next: "BI", req: ["Zugführer"], years: 0 },
+    "BI": { next: "BOI", req: ["Verbandsführer 1"], years: 0 },
+    "BOI": { next: "StBI", req: ["Verbandsführer 2"], years: 0 },
+    "StBI": { next: null, req: [], years: 0 }
+};
+
+const PromotionLogic = {
+    check(item, config) {
+        const currentRank = item["Dienstgrad"];
+        const rule = config[currentRank];
+        if (!rule) return { status: "CHECK N.A.", color: "bg-slate-100 text-slate-400", monthsLeft: 0 };
+        if (!rule.next) return { status: "MAX", color: "bg-transparent text-slate-400 border-slate-200 shadow-none", monthsLeft: 0 };
+
+        const referenceDate = new Date(item["Letzte Beförderung"] || item["Eintritt"]);
+        const now = new Date(Core.state.globalStichtag); 
+        const yearsServed = (now - referenceDate) / (1000 * 60 * 60 * 24 * 365.25);
+        const requiredYears = parseInt(rule.years) || 0;
+        const timeMet = isNaN(yearsServed) ? false : yearsServed >= requiredYears;
+        const monthsLeft = Math.max(0, Math.ceil((requiredYears - yearsServed) * 12));
+
+        const missingLgs = rule.req.filter(lg => {
+            const val = item[lg]; 
+            return !val || val === '---' || val === '';
+        });
+
+        if (timeMet && missingLgs.length === 0) return { status: "BEREIT", color: "bg-emerald-500 text-white", monthsLeft: 0 };
+        else if (!timeMet) return { status: "WARTEZEIT", color: "bg-amber-100 text-amber-700", monthsLeft: monthsLeft };
+        else return { status: "LG FEHLT", color: "bg-orange-100 text-orange-700", monthsLeft: 0 };
+    }
 };
 
 const Core = {
@@ -8,143 +48,277 @@ const Core = {
         activeModule: 'dashboard',
         data: { personnel: [], operations: [], events: [] },
         globalStichtag: new Date().toISOString().split('T')[0],
-        searchTerm: ''
+        searchTerm: '',
+        selectedYear: 'all'
+    },
+
+    actions: {
+        updateGlobalStichtag: async function(newDate) {
+            Core.state.globalStichtag = newDate;
+            Core.service.updateStatus('orange');
+            try {
+                const url = `${Core.service.endpoint}?action=update_stichtag&date=${newDate}&t=${Date.now()}`;
+                const response = await fetch(url);
+                if (response.ok) Core.service.updateStatus('green');
+            } catch (error) {
+                Core.service.updateStatus('red');
+            }
+            Core.router.render();
+        }
     },
 
     modules: [
-        { id: 'dashboard', label: 'Übersicht', icon: '🏠' },
-        { id: 'personnel', label: 'Personal', icon: '👥' },
-        { id: 'operations', label: 'Einsätze', icon: '🚒' }
+        { id: 'dashboard', label: 'Übersicht' },
+        { id: 'personnel', label: 'Personal' },
+        { id: 'operations', label: 'Einsätze' },
+        { id: 'events', label: 'Termine' }
     ],
 
     service: {
         endpoint: 'https://script.google.com/macros/s/AKfycbxA8lHhtAXoGKTCkN1s4thQH-qWQYeNS3QkySUDpB-2_3mrAuy2cuuWBy4UjR4xpjeR/exec',
-
         updateStatus(color) {
             const d = document.getElementById('conn-dot');
-            if(d) { 
-                const colorMap = {
-                    'green': 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.9)]',
-                    'orange': 'bg-amber-500 animate-pulse shadow-[0_0_8px_rgba(245,158,11,0.9)]',
-                    'red': 'bg-rose-600 animate-bounce shadow-[0_0_8px_rgba(225,29,72,0.9)]'
-                };
-                d.className = `absolute -top-1 -right-2 w-2 h-2 rounded-full transition-all duration-500 ${colorMap[color] || 'bg-slate-400'}`;
-            }
+            if(!d) return;
+            const colorMap = {
+                'green': 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.9)]',
+                'orange': 'bg-amber-500 animate-pulse shadow-[0_0_8px_rgba(245,158,11,0.9)]',
+                'red': 'bg-rose-600 animate-bounce shadow-[0_0_8px_rgba(225,29,72,0.9)]'
+            };
+            d.className = `absolute -top-1 -right-2 w-2 h-2 rounded-full transition-all duration-500 ${colorMap[color] || 'bg-slate-400'}`;
         },
-        
         async fetchData() {
+            this.updateStatus('orange');
             try {
                 const res = await fetch(`${this.endpoint}?action=read&module=all&t=${Date.now()}`);
                 const json = await res.json();
+                if (json.stichtag) Core.state.globalStichtag = json.stichtag.split('T')[0];
                 Core.state.data.personnel = json.personnel || [];
                 Core.state.data.operations = json.operations || [];
-                if(json.stichtag) Core.state.globalStichtag = json.stichtag.split('T')[0];
+                Core.state.data.events = json.events || [];
+                this.updateStatus('green');
                 Core.router.render();
             } catch (e) {
-                console.error("Fetch Error:", e);
+                this.updateStatus('red');
             }
-        }
-    },
-
-    ui: {
-        // Optimiert für den Header-Nav
-        renderNav() {
-            const nav = document.getElementById('main-nav');
-            if(!nav) return;
-            nav.innerHTML = Core.modules.map(m => `
-                <button onclick="Core.router.navigate('${m.id}')" 
-                        class="px-4 py-1.5 rounded-xl text-[10px] font-black-italic transition-all duration-300 ${Core.state.activeModule === m.id ? 'nav-active' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'}">
-                    ${m.label}
-                </button>
-            `).join('');
-        },
-
-        renderTable(title, schema, data) {
-            if (!data || data.length === 0) return `<p class="p-8 text-center text-slate-400 italic">Keine Daten vorhanden.</p>`;
-            return `
-                <div class="overflow-x-auto bg-white dark:bg-slate-800 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-700">
-                    <table class="w-full text-left border-collapse">
-                        <thead>
-                            <tr class="bg-slate-50 dark:bg-slate-900/50">
-                                ${schema.map(s => `<th class="p-4 text-[10px] font-black uppercase text-slate-400 italic">${s}</th>`).join('')}
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${data.map(row => `
-                                <tr onclick='Core.ui.showDetail("${title}", ${JSON.stringify(row).replace(/'/g, "&apos;")})' 
-                                    class="border-t border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors cursor-pointer">
-                                    ${schema.map(key => `<td class="p-4 text-sm font-semibold">${row[key] || '-'}</td>`).join('')}
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                </div>`;
-        },
-
-        showDetail(title, data) {
-            const modal = document.getElementById('detail-modal');
-            const content = document.getElementById('modal-content');
-            content.innerHTML = `
-                <button onclick="Core.ui.closeDetail()" class="mb-8 text-brandRed font-black-italic flex items-center gap-2">
-                    <span class="text-xl">←</span> Schließen
-                </button>
-                <h2 class="text-3xl font-black-italic mb-8 animate-logo">${title} Details</h2>
-                <div class="space-y-3">
-                    ${Object.entries(data).map(([k, v]) => `
-                        <div class="p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700/50">
-                            <p class="text-[10px] font-black text-slate-400 uppercase italic mb-1">${k}</p>
-                            <p class="font-bold text-slate-900 dark:text-white">${v || 'Keine Angabe'}</p>
-                        </div>
-                    `).join('')}
-                </div>`;
-            modal.classList.remove('hidden');
-            setTimeout(() => content.classList.remove('translate-x-full'), 10);
-        },
-
-        closeDetail() {
-            document.getElementById('modal-content').classList.add('translate-x-full');
-            setTimeout(() => document.getElementById('detail-modal').classList.add('hidden'), 300);
         }
     },
 
     router: {
-        navigate(mod) {
-            Core.state.activeModule = mod;
+        navigate(id) {
+            Core.state.activeModule = id;
             this.render();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         },
         render() {
-            const vp = document.getElementById('app-viewport');
-            Core.ui.renderNav();
+            const nav = document.getElementById('main-nav');
+            nav.innerHTML = Core.modules.map(m => `
+                <button onclick="Core.router.navigate('${m.id}')" 
+                        class="px-4 py-2 md:px-6 rounded-md text-[10px] font-black uppercase tracking-widest transition-all ${Core.state.activeModule === m.id ? 'nav-active' : 'text-slate-500 hover:text-slate-900'}">
+                    ${m.label}
+                </button>`).join('');
+            Core.ui.render();
+        }
+    },
 
-            // Die Überschriften nutzen jetzt 'animate-logo' für den Fade-In Effekt
-            if (Core.state.activeModule === 'dashboard') {
-                vp.innerHTML = `
-                    <h1 class="text-4xl font-black-italic mb-8 animate-logo">Übersicht</h1>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-white">
-                        <div class="bg-slate-900 dark:bg-brandRed p-8 rounded-[2rem] shadow-xl relative overflow-hidden group">
-                            <div class="relative z-10">
-                                <p class="font-black-italic text-white/60">Personal Gesamt</p>
-                                <p class="text-7xl font-black italic mt-2">${Core.state.data.personnel.length}</p>
+    views: {
+        dashboard: () => {
+            const rawOps = Core.state.data.operations;
+            const pers = Core.state.data.personnel;
+            const currentYear = new Date().getFullYear().toString();
+            const uniqueOpsMap = new Map();
+            const filteredRawOps = [];
+
+            rawOps.forEach(o => {
+                const d = new Date(o.Datum);
+                const itemYear = d.getFullYear().toString();
+                if (itemYear === currentYear) {
+                    filteredRawOps.push(o); 
+                    const key = `E-${o.Einsatznummer}_D-${o.Datum}`;
+                    if (!uniqueOpsMap.has(key)) uniqueOpsMap.set(key, o);
+                }
+            });
+
+            const uniqueOps = Array.from(uniqueOpsMap.values());
+            const abteilungStats = { "A": 0, "UA": 0, "TV": 0 };
+            pers.forEach(p => {
+                const abt = String(p.Abteilung || "").toUpperCase().trim();
+                if (abteilungStats.hasOwnProperty(abt)) abteilungStats[abt]++;
+            });
+
+            const artStats = {};
+            uniqueOps.forEach(o => {
+                const art = o["Einsatz Art"] || "Sonstige";
+                artStats[art] = (artStats[art] || 0) + 1;
+            });
+            const topArten = Object.entries(artStats).sort((a,b) => b[1]-a[1]).slice(0, 3);
+
+            const ranking = {};
+            filteredRawOps.forEach(o => { 
+                if(o.Name && o.Vorname) {
+                    const key = `${o.Vorname} ${o.Name}`;
+                    ranking[key] = (ranking[key] || 0) + 1; 
+                }
+            });
+            const top3 = Object.entries(ranking).sort((a,b) => b[1]-a[1]).slice(0,3);
+
+            return `
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
+                    <div class="stat-card border-l-4 border-l-brandRed">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase italic">Personalstand</p>
+                        <div class="flex items-baseline gap-2">
+                            <h2 class="text-4xl font-black-italic italic">${pers.length}</h2>
+                            <span class="text-[10px] font-black text-slate-400 uppercase tracking-tighter italic font-bold">Gesamt</span>
+                        </div>
+                        <div class="mt-4 grid grid-cols-3 gap-2">
+                            <div class="bg-slate-50 dark:bg-slate-800 p-2 rounded-xl text-center">
+                                <p class="text-[11px] font-bold text-brandRed italic uppercase">A</p>
+                                <p class="text-lg font-black italic">${abteilungStats["A"]}</p>
                             </div>
-                            <div class="absolute -right-4 -bottom-4 text-900 opacity-10 group-hover:scale-110 transition-transform">
-                                <span class="text-9xl">👥</span>
+                            <div class="bg-slate-50 dark:bg-slate-800 p-2 rounded-xl text-center">
+                                <p class="text-[11px] font-bold text-slate-500 italic uppercase">UA</p>
+                                <p class="text-lg font-black italic">${abteilungStats["UA"]}</p>
+                            </div>
+                            <div class="bg-slate-50 dark:bg-slate-800 p-2 rounded-xl text-center">
+                                <p class="text-[11px] font-bold text-slate-500 italic uppercase">TV</p>
+                                <p class="text-lg font-black italic">${abteilungStats["TV"]}</p>
                             </div>
                         </div>
-                    </div>`;
-            } else if (Core.state.activeModule === 'personnel') {
-                vp.innerHTML = `
-                    <h1 class="text-4xl font-black-italic mb-8 animate-logo">Personalverwaltung</h1>
-                    ${Core.ui.renderTable("Mitglied", SCHEMA.personnel, Core.state.data.personnel)}`;
-            } else if (Core.state.activeModule === 'operations') {
-                vp.innerHTML = `
-                    <h1 class="text-4xl font-black-italic mb-8 animate-logo">Einsatzberichte</h1>
-                    ${Core.ui.renderTable("Einsatz", SCHEMA.operations, Core.state.data.operations)}`;
-            }
+                    </div>
+                    </div>
+            `;
+        },
+        personnel: () => {
+            const pers = Core.state.data.personnel;
+            const abteilungStats = { "A": 0, "UA": 0, "TV": 0 };
+            pers.forEach(p => {
+                const abt = String(p.Abteilung || "").toUpperCase().trim();
+                if (abteilungStats.hasOwnProperty(abt)) abteilungStats[abt]++;
+            });
+            return `
+                <div class="space-y-4 -mt-4">
+                    <div class="px-6 flex flex-wrap items-center gap-x-8 gap-y-4 py-4 border-b border-slate-200 dark:border-slate-800">
+                        <div class="flex items-center gap-3">
+                            <p class="text-[14px] font-bold text-slate-400 dark:text-slate-500 uppercase italic tracking-widest">Personalstand</p>
+                            <div class="flex items-baseline gap-2">
+                                <p class="text-[11px] font-bold text-brandRed italic uppercase">Gesamt</p>
+                                <p class="text-2xl font-black italic text-slate-900 dark:text-white leading-none">${pers.length}</p>
+                            </div>
+                        </div>
+                        <div class="ml-auto flex items-center gap-3 bg-slate-50 dark:bg-slate-800/50 p-1.5 pl-3 rounded-xl border border-slate-100 dark:border-slate-700 shadow-sm">
+                            <div class="text-right">
+                                <p class="text-[9px] font-black uppercase text-slate-400 leading-none">Prüf-Stichtag</p>
+                                <p class="text-[8px] text-brandRed font-black italic uppercase leading-tight">Laufbahn-Check</p>
+                            </div>
+                            <input type="date" value="${Core.state.globalStichtag}" onchange="Core.actions.updateGlobalStichtag(this.value)" class="bg-white dark:bg-slate-900 border-none rounded-lg px-2 py-1 text-xs font-black text-brandRed outline-none cursor-pointer">
+                        </div>
+                    </div>
+                    ${Core.ui.renderTable("Personalverwaltung", SCHEMA.personnel, pers)}
+                </div>
+            `;
+        },
+        operations: () => {
+            const oprt = Core.state.data.operations || [];
+            const uniqueOps = Core.ui.getUniqueEinsatzData(oprt, Core.state.selectedYear);
+            return Core.ui.renderTable("Einsatzdokumentation", SCHEMA.operations, uniqueOps);
+        },
+        events: () => Core.ui.renderTable("Terminplanung", SCHEMA.events, Core.state.data.events)
+    },
+
+    ui: {
+        calculateServiceYears(entryDate) {
+            if (!entryDate) return '---';
+            const start = new Date(entryDate);
+            const today = new Date();
+            if (isNaN(start)) return '---';
+            let years = today.getFullYear() - start.getFullYear();
+            if (today.getMonth() < start.getMonth() || (today.getMonth() === start.getMonth() && today.getDate() < start.getDate())) years--;
+            return years >= 0 ? `${years} Jahre` : '---';
+        },
+        getUniqueEinsatzData(data, targetYear = 'all') {
+            const uniqueMap = new Map();
+            data.forEach(row => {
+                const dateObj = new Date(row.Datum);
+                const year = dateObj.getFullYear().toString();
+                if (targetYear !== 'all' && year !== targetYear.toString()) return;
+                const nr = row.Einsatznummer || '0';
+                const key = `${year}-${nr}`;
+                if (!uniqueMap.has(key)) {
+                    uniqueMap.set(key, { ...row, AnzahlPers: 1 });
+                } else {
+                    uniqueMap.get(key).AnzahlPers += 1;
+                }
+            });
+            return Array.from(uniqueMap.values()).map(e => {
+                e.Erstattung = (parseFloat(e.Stunden) || 0) * (e.AnzahlPers || 0) * 4;
+                return e;
+            });
+        },
+        render() {
+            const viewport = document.getElementById('app-viewport');
+            if (viewport) viewport.innerHTML = Core.views[Core.state.activeModule]();
+        },
+        handleSearch(value) {
+            Core.state.searchTerm = value;
+            this.render();
+        },
+        renderTable(title, headers, data) {
+            const searchTerm = Core.state.searchTerm.toLowerCase();
+            const filteredData = data.filter(row => 
+                Object.values(row).some(val => String(val).toLowerCase().includes(searchTerm))
+            );
+
+            return `
+                <div class="w-full bg-white dark:bg-slate-900 rounded-[1rem] border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
+                    <div class="p-6 border-b border-slate-100 dark:border-slate-800 flex flex-col md:flex-row justify-between items-center gap-4">
+                        <h2 class="text-xl font-black italic text-brandRed uppercase tracking-tighter">${title}</h2>
+                        <input type="text" placeholder="Suchen..." oninput="Core.ui.handleSearch(this.value)" value="${Core.state.searchTerm}" class="bg-slate-50 dark:bg-slate-800 border rounded-xl px-4 py-2 text-xs font-bold w-full md:w-72">
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left">
+                            <thead class="sticky-header">
+                                <tr>${headers.map(h => `<th class="px-6 py-4">${h}</th>`).join('')}</tr>
+                            </thead>
+                            <tbody class="text-[11px] font-bold">
+                                ${filteredData.map((row, idx) => `
+                                    <tr class="data-row cursor-pointer" onclick="Core.ui.showDetail('${Core.state.activeModule}', ${idx})">
+                                        ${headers.map(h => {
+                                            let val = row[h] || '---';
+                                            if (h === "Dienstjahre") val = this.calculateServiceYears(row["Eintritt"]);
+                                            return `<td class="px-6 py-4">${val}</td>`;
+                                        }).join('')}
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>`;
+        },
+        showDetail(moduleId, index) {
+            const modal = document.getElementById('detail-modal');
+            const content = document.getElementById('modal-content');
+            const body = document.getElementById('modal-body');
+            const item = Core.state.data[moduleId === 'personnel' ? 'personnel' : 'operations'][index];
+            
+            body.innerHTML = `<h2 class="text-xl font-black italic mb-4">${item.Name || 'Detail'}</h2>
+                              <div class="space-y-2">${Object.entries(item).map(([k,v]) => `<p><b>${k}:</b> ${v}</p>`).join('')}</div>`;
+            
+            modal.classList.remove('hidden');
+            setTimeout(() => content.classList.remove('translate-x-full'), 10);
+        },
+        closeDetail() {
+            const modal = document.getElementById('detail-modal');
+            const content = document.getElementById('modal-content');
+            content.classList.add('translate-x-full');
+            setTimeout(() => modal.classList.add('hidden'), 300);
         }
     }
 };
 
-// Initialisierung
+// Start & Service Worker
 Core.service.fetchData();
 
-
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(console.error);
+    });
+}
