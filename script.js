@@ -165,16 +165,17 @@ function showPage(page) {
     content.innerHTML = html;
 }
   if (page === 'personal') {
-    // 1. Zähl-Logik für die Spalte "Abteilung"
+    const pers = globalData.personnel; // Zugriff auf deine Daten
+
+    // 1. Zähl-Logik für die Statistik (Deine Logik)
     const abtZaehler = {};
-    globalData.personnel.forEach(p => {
+    pers.forEach(p => {
         const abt = p["Abteilung"] || 'Nicht zugeordnet';
         abtZaehler[abt] = (abtZaehler[abt] || 0) + 1;
     });
 
-    // 2. HTML für die Zusammenfassung (Badges) bauen
+    // 2. HTML für die Statistik-Badges (Dein Design)
     let personalStatsHtml = '<div class="flex flex-wrap gap-2 mb-6">';
-    
     for (const [abteilung, anzahl] of Object.entries(abtZaehler)) {
         personalStatsHtml += `
             <div class="bg-white dark:bg-slate-800 px-3 py-2 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 flex items-center gap-2">
@@ -184,32 +185,27 @@ function showPage(page) {
     }
     personalStatsHtml += '</div>';
 
-    // 3. Die Personalseite zusammenbauen
+    // 3. Die Seite mit Suchzeile und TABELLE zusammenbauen
     let html = `
-        <h2 class="text-xl font-black mb-4 uppercase italic text-slate-900 dark:text-white">Personal & Abteilungen</h2>
+        <h2 class="text-xl font-black mb-4 uppercase italic text-slate-900 dark:text-white">Personalverwaltung</h2>
+        
         ${personalStatsHtml} 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+
+        <div class="mb-4">
+            <div class="relative">
+                <input type="text" 
+                       id="personnelSearch" 
+                       onkeyup="filterPersonnelTable()"
+                       placeholder="Name oder Abteilung suchen..." 
+                       class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl py-3 px-4 text-sm outline-none shadow-sm">
+            </div>
+        </div>
+
+        <div id="personalTableContainer" class="overflow-x-auto">
+            ${Core.ui.renderTable("Personalliste", SCHEMA.personnel, pers)}
+        </div>
     `;
 
-    // Liste der Personen (alphabetisch nach Nachname sortiert, falls vorhanden)
-    const sortiertesPersonal = [...globalData.personnel].sort((a, b) => {
-        return (a.Nachname || "").localeCompare(b.Nachname || "");
-    });
-
-    sortiertesPersonal.forEach(p => {
-        html += `
-            <div class="bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border-l-4 border-slate-300 flex justify-between items-center">
-                <div>
-                    <p class="font-bold text-slate-900 dark:text-white leading-tight">${p.Vorname || ''} ${p.Nachname || 'Unbekannt'}</p>
-                    <p class="text-[10px] text-slate-500 uppercase mt-1 font-medium">${p.Abteilung || ''}</p>
-                </div>
-                <div class="text-[10px] font-bold text-slate-400 bg-slate-50 dark:bg-slate-700/50 px-2 py-1 rounded">
-                    ${p.Funktion || 'Mitglied'}
-                </div>
-            </div>`;
-    });
-
-    html += '</div>';
     content.innerHTML = html;
 }
 // Nach dem Wechseln: Scrolle nach ganz oben
@@ -225,6 +221,7 @@ function toggleDarkMode() {
 // Damit die Buttons die Funktionen unter Garantie finden
 window.showPage = showPage;
 window.toggleDarkMode = toggleDarkMode;
+
 
 
 
