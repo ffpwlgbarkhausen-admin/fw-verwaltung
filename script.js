@@ -225,6 +225,21 @@ const Core = {
     },
 
     ui: {
+        // --- NEU: Diese Funktion formatiert das Datum global ---
+        formatDate(value) {
+            if (!value || value === '---' || String(value).trim() === '') return '---';
+            const date = new Date(value);
+            // Prüfen, ob es ein gültiges Datum ist
+            if (!isNaN(date.getTime()) && String(value).includes('-')) {
+                return date.toLocaleDateString('de-DE', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric'
+                });
+            }
+            return value;
+        },
+
         calculateServiceYears(entryDate) {
             if (!entryDate) return '---';
             const start = new Date(entryDate);
@@ -234,6 +249,7 @@ const Core = {
             if (today.getMonth() < start.getMonth() || (today.getMonth() === start.getMonth() && today.getDate() < start.getDate())) years--;
             return years >= 0 ? `${years} Jahre` : '---';
         },
+
         getUniqueEinsatzData(data, targetYear = 'all') {
             const uniqueMap = new Map();
             data.forEach(row => {
@@ -253,14 +269,17 @@ const Core = {
                 return e;
             });
         },
+
         render() {
             const viewport = document.getElementById('app-viewport');
             if (viewport) viewport.innerHTML = Core.views[Core.state.activeModule]();
         },
+
         handleSearch(value) {
             Core.state.searchTerm = value;
             this.render();
         },
+
         renderTable(title, headers, data) {
             const searchTerm = Core.state.searchTerm.toLowerCase();
             const filteredData = data.filter(row => 
@@ -283,7 +302,12 @@ const Core = {
                                     <tr class="data-row cursor-pointer" onclick="Core.ui.showDetail('${Core.state.activeModule}', ${idx})">
                                         ${headers.map(h => {
                                             let val = row[h] || '---';
-                                            if (h === "Dienstjahre") val = this.calculateServiceYears(row["Eintritt"]);
+                                            if (h === "Dienstjahre") {
+                                                val = this.calculateServiceYears(row["Eintritt"]);
+                                            } else {
+                                                // HIER EINGEBAUT: Datum formatieren
+                                                val = this.formatDate(val);
+                                            }
                                             return `<td class="px-6 py-4">${val}</td>`;
                                         }).join('')}
                                     </tr>
@@ -293,18 +317,37 @@ const Core = {
                     </div>
                 </div>`;
         },
+
         showDetail(moduleId, index) {
             const modal = document.getElementById('detail-modal');
             const content = document.getElementById('modal-content');
             const body = document.getElementById('modal-body');
-            const item = Core.state.data[moduleId === 'personnel' ? 'personnel' : 'operations'][index];
             
-            body.innerHTML = `<h2 class="text-xl font-black italic mb-4">${item.Name || 'Detail'}</h2>
-                              <div class="space-y-2">${Object.entries(item).map(([k,v]) => `<p><b>${k}:</b> ${v}</p>`).join('')}</div>`;
+            // Korrekte Datenquelle wählen
+            const dataSet = (Core.state.activeModule === 'personnel') ? Core.state.data.personnel : 
+                          (Core.state.activeModule === 'operations') ? Core.ui.getUniqueEinsatzData(Core.state.data.operations) : 
+                          Core.state.data.events;
+            
+            const item = dataSet[index];
+            if (!item) return;
+            
+            body.innerHTML = `
+                <h2 class="text-xl font-black italic mb-6 text-brandRed uppercase">${item.Name || item.Thema || 'Details'}</h2>
+                <div class="grid grid-cols-1 gap-3">
+                    ${Object.entries(item).map(([k,v]) => `
+                        <div class="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-100 dark:border-slate-700/50">
+                            <p class="text-[9px] uppercase font-bold text-slate-400 italic">${k}</p>
+                            <p class="text-sm font-semibold text-slate-900 dark:text-white break-words">
+                                ${this.formatDate(v)} </p>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
             
             modal.classList.remove('hidden');
             setTimeout(() => content.classList.remove('translate-x-full'), 10);
         },
+
         closeDetail() {
             const modal = document.getElementById('detail-modal');
             const content = document.getElementById('modal-content');
@@ -322,3 +365,4 @@ if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('./sw.js').catch(console.error);
     });
 }
+
