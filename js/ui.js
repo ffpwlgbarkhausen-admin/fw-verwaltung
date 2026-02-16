@@ -62,14 +62,18 @@ Core.ui = {
     },
 
     showDetail(moduleId, uniqueId) {
-    // Suche den Datensatz anhand der Pers.Nr. (oder Einsatznummer)
-    const item = Core.state.data[moduleId].find(d => 
-        (d["Pers.Nr."] && String(d["Pers.Nr."]) === String(uniqueId)) || 
-        (d["Einsatznummer"] && String(d["Einsatznummer"]) === String(uniqueId)) ||
-        (d["Thema"] && String(d["Thema"]) === String(uniqueId))
-    );
-    
-    if (!item) return;
+        // --- NEU: Fehlersichere Suche nach der ID ---
+        const item = Core.state.data[moduleId].find(d => 
+            (d["Pers.Nr."] && String(d["Pers.Nr."]) === String(uniqueId)) || 
+            (d["Einsatznummer"] && String(d["Einsatznummer"]) === String(uniqueId)) ||
+            (d["Thema"] && String(d["Thema"]) === String(uniqueId))
+        );
+        
+        // Falls nichts gefunden wird, brechen wir hier ab, statt einen Fehler zu werfen
+        if (!item) {
+            console.error("Datensatz mit ID " + uniqueId + " nicht gefunden.");
+            return;
+        }
 
         const modal = document.getElementById('detail-modal');
         const body = document.getElementById('modal-body');
@@ -81,7 +85,6 @@ Core.ui = {
             const currentRule = FW_CONFIG[item["Dienstgrad"]];
             const nextRank = currentRule?.next || "Endamt erreicht";
             
-            // Fehlende Lehrgänge ermitteln
             let missingInfo = "";
             if (check.status === "LG FEHLT" && currentRule) {
                 const missing = currentRule.req.filter(lg => !item[lg] || item[lg] === '---' || item[lg] === '');
@@ -100,13 +103,7 @@ Core.ui = {
                             <p class="text-sm font-black italic uppercase text-slate-900 dark:text-white leading-none">${nextRank}</p>
                         </div>
                     </div>
-                    
-                    ${check.monthsLeft > 0 ? `
-                        <div class="mt-4 pt-3 border-t border-amber-200/50">
-                            <p class="text-[10px] font-black italic uppercase tracking-widest">Noch ca. ${check.monthsLeft} Monate Wartezeit</p>
-                        </div>
-                    ` : ''}
-                    
+                    ${check.monthsLeft > 0 ? `<div class="mt-4 pt-3 border-t border-amber-200/50"><p class="text-[10px] font-black italic uppercase tracking-widest">Noch ca. ${check.monthsLeft} Monate Wartezeit</p></div>` : ''}
                     ${missingInfo}
                 </div>
             `;
@@ -118,10 +115,9 @@ Core.ui = {
                 <h2 class="text-2xl font-black italic mb-6 border-b pb-4 dark:border-slate-800 uppercase tracking-tighter">
                     ${item.Name || item["Einsatz Art"] || item["Thema"] || 'Details'}
                 </h2>
-                
-                <div class="flex-1 overflow-y-auto pr-2">
+                <div class="flex-1 overflow-y-auto pr-2 pb-10">
                     ${promoHtml}
-                    <div class="grid grid-cols-1 gap-3 pb-10">
+                    <div class="grid grid-cols-1 gap-3">
                         ${Object.entries(item).map(([k, v]) => `
                             <div class="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-100 dark:border-slate-700/50">
                                 <p class="text-[9px] uppercase font-black text-slate-400 italic tracking-widest mb-1">${k}</p>
