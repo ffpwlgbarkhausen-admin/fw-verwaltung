@@ -43,19 +43,28 @@
     <script src="js/views.js"></script>
 
     <script>
-        // Dieser Block wartet, bis wirklich ALLES geladen ist
+        // Wir warten, bis das Fenster UND alle Skripte fertig geladen sind
         window.addEventListener('load', () => {
-            console.log("LG13 Core: System bereit.");
+            console.log("Prüfe System-Module...");
             
-            // Sicherheitscheck: Existieren alle Module?
-            if (typeof Core !== 'undefined' && Core.views) {
+            // Check: Sind alle Dateien da?
+            if (typeof Core !== 'undefined' && Core.views && Core.service) {
+                console.log("Alle Module aktiv. Starte Daten-Abruf...");
                 Core.service.fetchData();
             } else {
-                console.error("Kritischer Fehler: Skripte wurden nicht vollständig geladen.");
+                console.error("Fehler: views.js oder ui.js wurden nicht rechtzeitig geladen.");
+                // Optisches Feedback für dich:
+                document.getElementById('app-viewport').innerHTML = `
+                    <div class="p-10 text-center border-2 border-dashed border-red-500 rounded-3xl">
+                        <p class="text-red-500 font-black-italic italic uppercase">System-Ladefehler</p>
+                        <p class="text-xs mt-2">Die Skript-Dateien konnten nicht verknüpft werden.</p>
+                    </div>
+                `;
             }
         });
     </script>
 </body>
 </html>
+
 
 
