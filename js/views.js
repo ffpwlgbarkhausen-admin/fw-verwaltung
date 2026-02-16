@@ -63,7 +63,7 @@ Core.views = {
                         </thead>
                         <tbody class="text-[11px] font-bold">
                             ${filteredData.map((row, idx) => `
-                                <tr class="data-row cursor-pointer" onclick="Core.ui.showDetail('${Core.state.activeModule}', ${idx})">
+                                <tr class="data-row cursor-pointer" onclick="Core.ui.showDetail('${Core.state.activeModule}', '${row["Pers.Nr."]}')">
                                     ${headers.map(h => {
                                         let val = row[h] || '---';
                                         
