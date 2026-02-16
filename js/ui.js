@@ -78,7 +78,12 @@ Core.ui = {
 
     handleSearch(value) {
         Core.state.searchTerm = value;
-        Core.router.render();
+        
+        clearTimeout(debounceTimer); // Lösche den alten Timer
+        debounceTimer = setTimeout(() => {
+            Core.router.render();
+            console.log("Suche ausgeführt für:", value);
+        }, 300); // 300ms warten bei der Suche
     },
 
     resetSearch() {
