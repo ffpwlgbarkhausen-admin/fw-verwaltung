@@ -6,19 +6,23 @@
 Core.views = {
     // DASHBOARD VIEW
     dashboard: () => {
-        // 1. Daten-Vorbereitung: Personal nach Status filtern
+        // 1. Daten-Vorbereitung: Personal nach Status filtern (Tolerant gegenüber Kleinschreibung)
         const personnel = Core.state.data.personnel;
         const pCount = personnel.length;
-        const aCount = personnel.filter(p => p.Status === 'A').length;
-        const uaCount = personnel.filter(p => p.Status === 'UA').length;
-        const tvCount = personnel.filter(p => p.Status === 'TV').length;
+        const getPStatus = (s) => personnel.filter(p => String(p.Status || '').trim().toUpperCase() === s).length;
+        
+        const aCount = getPStatus('A');
+        const uaCount = getPStatus('UA');
+        const tvCount = getPStatus('TV');
 
-        // 2. Daten-Vorbereitung: Einsätze nach Art filtern
+        // 2. Daten-Vorbereitung: Einsätze nach Art filtern (Tolerant gegenüber Kleinschreibung)
         const ops = Core.state.data.operations;
         const oCount = ops.length;
-        const bmaCount = ops.filter(o => o.Art === 'BMA').length;
-        const feuerCount = ops.filter(o => o.Art === 'FEUER').length;
-        const thCount = ops.filter(o => o.Art === 'TH').length;
+        const getOpArt = (a) => ops.filter(o => String(o.Art || '').trim().toUpperCase() === a).length;
+
+        const bmaCount = getOpArt('BMA');
+        const feuerCount = getOpArt('FEUER');
+        const thCount = getOpArt('TH');
         const sonstigeCount = oCount - (bmaCount + feuerCount + thCount);
 
         return `
@@ -86,10 +90,9 @@ Core.views = {
                        onchange="Core.service.updateStichtag(this.value); Core.state.globalStichtag = this.value; Core.router.render()"
                        class="bg-slate-50 dark:bg-slate-800 px-3 py-1 rounded-lg font-black italic text-brandRed focus:outline-none cursor-pointer">
             </div>
-
-            ${Core.views.personnel()}
         `;
     },
+
     // MODULE VIEWS
     personnel: () => Core.views.renderTable("Personalverwaltung", SCHEMA.personnel, Core.state.data.personnel),
     operations: () => Core.views.renderTable("Einsatzdokumentation", SCHEMA.operations, Core.state.data.operations),
@@ -127,17 +130,14 @@ Core.views = {
                                     ${headers.map(h => {
                                         let val = row[h] || '---';
                                         
-                                        // 1. Datums-Formatierung
                                         if (h.includes("Datum") || h === "Eintritt" || h === "Letzte Beförderung") {
                                             val = Core.ui.formatDate(val);
                                         }
 
-                                        // 2. Spezial-Handling: Dienstjahre
                                         if (h === "Dienstjahre") {
                                             val = Core.ui.calculateServiceYears(row["Eintritt"]);
                                         }
 
-                                        // 3. Spezial-Handling: Beförderungs-Badges
                                         if (h === "Beförderung") {
                                             const check = PromotionLogic.check(row, FW_CONFIG);
                                             const currentRule = FW_CONFIG[row["Dienstgrad"]];
@@ -156,7 +156,6 @@ Core.views = {
                                                 </td>`;
                                         }
 
-                                        // 4. Standard-Zelle
                                         return `<td class="px-6 py-4 text-slate-700 dark:text-slate-300">${val}</td>`;
                                     }).join('')}
                                 </tr>
@@ -169,4 +168,4 @@ Core.views = {
                 </div>
             </div>`;
     }
-}; // <--- DIESE KLAMMER HAT GEFEHLT
+};
