@@ -45,13 +45,12 @@ Core.ui = {
     // KORRIGIERT: Verhindert den Versatz um einen Tag durch UTC-Nutzung
     formatDate(dateVal) {
         if (!dateVal || dateVal === '---') return '---';
-        const d = new Date(dateVal);
         
-        // Prüfen, ob es ein gültiges Datum ist
-        if (isNaN(d.getTime())) return dateVal; 
+        // Wir erzwingen, dass das Datum als UTC behandelt wird, 
+        // um den "Ein-Tag-Vorher-Effekt" zu vermeiden
+        const d = new Date(dateVal);
+        if (isNaN(d.getTime())) return dateVal;
 
-        // Wir extrahieren die Zahlen direkt aus den UTC-Werten, 
-        // um Zeitzonensprünge (z.B. 00:00 Uhr -> 23:00 Uhr Vortag) zu vermeiden.
         const day = String(d.getUTCDate()).padStart(2, '0');
         const month = String(d.getUTCMonth() + 1).padStart(2, '0');
         const year = d.getUTCFullYear();
