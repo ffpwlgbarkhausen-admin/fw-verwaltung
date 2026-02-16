@@ -8,10 +8,8 @@ const PromotionLogic = {
         const currentRank = item["Dienstgrad"];
         const rule = config[currentRank];
 
-        // 1. Falls Rang nicht in der Config
         if (!rule) return { status: "CHECK N.A.", color: "bg-slate-100 text-slate-400", monthsLeft: 0 };
         
-        // 2. Prüfung auf Endamt (MAX)
         if (!rule.next) {
             return { 
                 status: "MAX", 
@@ -20,26 +18,19 @@ const PromotionLogic = {
             };
         }
 
-        // 3. Zeitprüfung
-        // Wir nutzen hier das Eintrittsdatum oder "Letzte Beförderung", falls vorhanden
         const referenceDate = new Date(item["Letzte Beförderung"] || item["Eintritt"]);
         const now = new Date();
         const yearsServed = (now - referenceDate) / (1000 * 60 * 60 * 24 * 365.25);
         
         const requiredYears = parseInt(rule.years) || 0;
         const timeMet = isNaN(yearsServed) ? false : yearsServed >= requiredYears;
-
-        // Monate berechnen
         const monthsLeft = Math.max(0, Math.ceil((requiredYears - yearsServed) * 12));
 
-        // 4. Lehrgangsprüfung
-        // Filtert die Voraussetzungen (z.B. "Truppführer") und schaut nach, ob in dieser Spalte beim User etwas steht
         const missingLgs = rule.req.filter(lg => {
             const val = item[lg]; 
             return !val || val === '---' || val === '';
         });
 
-        // 5. Status ermitteln
         if (timeMet && missingLgs.length === 0) {
             return { status: "BEREIT", color: "bg-emerald-500 text-white", monthsLeft: 0 };
         } else if (!timeMet) {
@@ -51,7 +42,6 @@ const PromotionLogic = {
 };
 
 Core.ui = {
-    // Hilfsfunktion für Dienstjahre (Anzeige in der Tabelle)
     calculateServiceYears(entryDate) {
         if (!entryDate) return '---';
         const start = new Date(entryDate);
@@ -66,6 +56,11 @@ Core.ui = {
         Core.router.render();
     },
 
+    resetSearch() {
+        Core.state.searchTerm = "";
+        Core.router.render();
+    },
+
     showDetail(moduleId, index) {
         const item = Core.state.data[moduleId][index];
         if (!item) return;
@@ -74,31 +69,61 @@ Core.ui = {
         const body = document.getElementById('modal-body');
         const content = document.getElementById('modal-content');
 
-        // Promotion Check für das Modal
         let promoHtml = "";
         if (moduleId === 'personnel') {
             const check = PromotionLogic.check(item, FW_CONFIG);
-            const nextRank = FW_CONFIG[item["Dienstgrad"]]?.next || "---";
+            const currentRule = FW_CONFIG[item["Dienstgrad"]];
+            const nextRank = currentRule?.next || "Endamt erreicht";
             
+            // Fehlende Lehrgänge ermitteln
+            let missingInfo = "";
+            if (check.status === "LG FEHLT" && currentRule) {
+                const missing = currentRule.req.filter(lg => !item[lg] || item[lg] === '---' || item[lg] === '');
+                missingInfo = `<p class="text-[10px] mt-2 font-black uppercase text-orange-800/60 italic">Fehlend: ${missing.join(', ')}</p>`;
+            }
+
             promoHtml = `
-                <div class="${check.color} p-4 rounded-2xl border mb-6">
-                    <p class="text-[10px] uppercase font-black italic opacity-70 tracking-widest">Status</p>
-                    <p class="text-xl font-black italic uppercase">${check.status}</p>
-                    ${check.monthsLeft > 0 ? `<p class="text-[10px] font-bold mt-1 italic">Noch ca. ${check.monthsLeft} Monate</p>` : ''}
-                    <p class="text-[10px] mt-3 uppercase font-bold opacity-60 italic">Nächster Dienstgrad: ${nextRank}</p>
+                <div class="${check.color} p-5 rounded-2xl border mb-6 shadow-sm shadow-slate-200 dark:shadow-none">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-[10px] uppercase font-black italic opacity-70 tracking-widest leading-none mb-1">Status</p>
+                            <p class="text-2xl font-black italic uppercase leading-none">${check.status}</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-[10px] uppercase font-black italic opacity-70 tracking-widest leading-none mb-1">Ziel-Amt</p>
+                            <p class="text-sm font-black italic uppercase text-slate-900 dark:text-white leading-none">${nextRank}</p>
+                        </div>
+                    </div>
+                    
+                    ${check.monthsLeft > 0 ? `
+                        <div class="mt-4 pt-3 border-t border-amber-200/50">
+                            <p class="text-[10px] font-black italic uppercase tracking-widest">Noch ca. ${check.monthsLeft} Monate Wartezeit</p>
+                        </div>
+                    ` : ''}
+                    
+                    ${missingInfo}
                 </div>
             `;
         }
 
         body.innerHTML = `
-            ${promoHtml}
-            <div class="space-y-4">
-                ${Object.entries(item).map(([k, v]) => `
-                    <div class="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-100 dark:border-slate-700">
-                        <p class="text-[9px] uppercase font-black text-slate-400 italic tracking-tighter">${k}</p>
-                        <p class="text-sm font-bold">${v || '---'}</p>
+            <div class="flex flex-col h-full">
+                <p class="text-[10px] font-black text-brandRed uppercase italic mb-1 tracking-widest">${moduleId}</p>
+                <h2 class="text-2xl font-black italic mb-6 border-b pb-4 dark:border-slate-800 uppercase tracking-tighter">
+                    ${item.Name || item["Einsatz Art"] || item["Thema"] || 'Details'}
+                </h2>
+                
+                <div class="flex-1 overflow-y-auto pr-2">
+                    ${promoHtml}
+                    <div class="grid grid-cols-1 gap-3 pb-10">
+                        ${Object.entries(item).map(([k, v]) => `
+                            <div class="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-100 dark:border-slate-700/50">
+                                <p class="text-[9px] uppercase font-black text-slate-400 italic tracking-widest mb-1">${k}</p>
+                                <p class="text-sm font-bold text-slate-800 dark:text-slate-200">${v || '---'}</p>
+                            </div>
+                        `).join('')}
                     </div>
-                `).join('')}
+                </div>
             </div>
         `;
 
