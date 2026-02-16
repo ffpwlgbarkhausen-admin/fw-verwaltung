@@ -21,7 +21,9 @@ const PromotionLogic = {
         const referenceDate = new Date(item["Letzte Beförderung"] || item["Eintritt"]);
         
         // KORREKTUR: Nutze den globalen Stichtag statt das heutige Datum
-        const stichtag = Core.state.globalStichtag ? new Date(Core.state.globalStichtag) : new Date();
+        // Das verhindert, dass Zeitzonen-Schwankungen den Tag ändern.
+const stichtagStr = Core.state.globalStichtag || new Date().toISOString().split('T')[0];
+const stichtag = new Date(stichtagStr + 'T12:00:00');
         
         // Differenz basierend auf dem Stichtag berechnen
         const diffTime = stichtag - referenceDate;
