@@ -68,20 +68,22 @@ Core.ui = {
     formatDate(dateVal) {
     if (!dateVal || dateVal === '---') return '---';
     
-    // Sicherstellen, dass wir mit einem String arbeiten
     const dateStr = String(dateVal);
     
-    // Wir extrahieren Jahr, Monat, Tag direkt aus dem String, 
-    // falls er im ISO-Format (2026-05-30...) kommt
+    // ISO-Format (YYYY-MM-DD) direkt zerlegen, um Zeitzonen-Sprünge zu verhindern
     if (dateStr.includes('-')) {
-        const [year, month, day] = dateStr.split('T')[0].split('-');
-        return `${day}.${month}.${year}`;
+        const parts = dateStr.split('T')[0].split('-');
+        if (parts.length === 3) {
+            const [year, month, day] = parts;
+            return `${day}.${month}.${year}`;
+        }
     }
 
-    // Fallback für andere Formate (z.B. Date-Objekte vom Sheet)
+    // Fallback für Date-Objekte
     const d = new Date(dateVal);
     if (isNaN(d.getTime())) return dateVal;
 
+    // UTC-Methoden nutzen, um den "Einen-Tag-Vorher"-Effekt zu vermeiden
     const day = String(d.getUTCDate()).padStart(2, '0');
     const month = String(d.getUTCMonth() + 1).padStart(2, '0');
     const year = d.getUTCFullYear();
