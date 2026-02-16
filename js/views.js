@@ -107,9 +107,13 @@ Core.views = {
                             </tr>
                         </thead>
                         <tbody class="text-[11px] font-bold">
-                            ${filteredData.map((row, idx) => `
-                                <tr class="data-row cursor-pointer" onclick="Core.ui.showDetail('${Core.state.activeModule}', '${row["Pers.Nr."]}')">
-                                    ${headers.map(h => {
+                            ${filteredData.map((row, idx) => {
+    // Dynamische ID ermitteln, je nachdem was vorhanden ist
+    const rowId = row["Pers.Nr."] || row["Einsatznummer"] || row["Thema"] || idx;
+    
+    return `
+        <tr class="data-row cursor-pointer" onclick="Core.ui.showDetail('${Core.state.activeModule}', '${rowId}')">
+            ${headers.map(h => {
                                         let val = row[h] || '---';
                                         if (h.includes("Datum") || h === "Eintritt" || h === "Letzte Beförderung") val = Core.ui.formatDate(val);
                                         if (h === "Dienstjahre") val = Core.ui.calculateServiceYears(row["Eintritt"]);
