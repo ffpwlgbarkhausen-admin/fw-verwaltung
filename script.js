@@ -90,30 +90,31 @@ const Core = {
     this.updateStatus('orange');
     try {
         const res = await fetch(`${this.endpoint}?action=read&module=all&t=${Date.now()}`);
-        const json = await res.json()console.log("ROHDATEN STICHTAG:", json.stichtag);
+        const json = await res.json(); 
+        
+        // --- LOG ZUR KONTROLLE ---
+        console.log("ROHDATEN STICHTAG:", json.stichtag);
 
-        // --- KORREKTUR: STICHTAG SICHER ÜBERNEHMEN ---
-        // --- KORREKTUR: STICHTAG SICHER ÜBERNEHMEN (ROBUSTE VERSION) ---
-if (json.stichtag) {
-    // 1. Wir erstellen das Datum
-    const dateObj = new Date(json.stichtag);
-    
-    // 2. Wir addieren künstlich 12 Stunden dazu.
-    // Egal ob Google 23:00 Uhr (Vorabend) oder 00:00 Uhr schickt:
-    // +12 Stunden landet IMMER sicher am richtigen Kalendertag.
-    dateObj.setHours(dateObj.getHours() + 12); 
-
-    const y = dateObj.getFullYear();
-    const m = String(dateObj.getMonth() + 1).padStart(2, '0');
-    const d = String(dateObj.getDate()).padStart(2, '0');
-    
-    Core.state.globalStichtag = `${y}-${m}-${d}`;
-}
+        // --- DER ULTIMATIVE STICHTAG-FIX (Regex statt Rechenlogik) ---
+        if (json.stichtag) {
+            const s = String(json.stichtag);
+            // Wir suchen nach YYYY-MM-DD im Text, völlig egal was Google an Zeit dranhängt
+            const match = s.match(/(\d{4})-(\d{2})-(\d{2})/);
+            
+            if (match) {
+                // Wir extrahieren die Zahlen direkt: Jahr-Monat-Tag
+                Core.state.globalStichtag = `${match[1]}-${match[2]}-${match[3]}`;
+            } else {
+                // Falls das Format DD.MM.YYYY ist
+                const deMatch = s.match(/(\d{2})\.(\d{2})\.(\d{4})/);
+                if (deMatch) {
+                    Core.state.globalStichtag = `${deMatch[3]}-${deMatch[2]}-${deMatch[1]}`;
+                }
+            }
+        }
 
         Core.state.data.personnel = json.personnel || [];
         Core.state.data.operations = json.operations || [];
-        
-        // Denke an die Uhrzeit-Korrektur (+1 Std), die wir vorhin besprochen haben!
         Core.state.data.events = json.events || []; 
 
         this.updateStatus('green');
@@ -462,6 +463,7 @@ if ('serviceWorker' in navigator) {
     });
 }
 */
+
 
 
 
