@@ -4,9 +4,8 @@
  */
 
 Core.views = {
-    // DASHBOARD VIEW
+    // DASHBOARD VIEW (Jetzt ohne Stichtag)
     dashboard: () => {
-        // 1. Daten-Vorbereitung: Personal nach Status filtern (Tolerant gegenüber Kleinschreibung)
         const personnel = Core.state.data.personnel;
         const pCount = personnel.length;
         const getPStatus = (s) => personnel.filter(p => String(p.Status || '').trim().toUpperCase() === s).length;
@@ -15,7 +14,6 @@ Core.views = {
         const uaCount = getPStatus('UA');
         const tvCount = getPStatus('TV');
 
-        // 2. Daten-Vorbereitung: Einsätze nach Art filtern (Tolerant gegenüber Kleinschreibung)
         const ops = Core.state.data.operations;
         const oCount = ops.length;
         const getOpArt = (a) => ops.filter(o => String(o.Art || '').trim().toUpperCase() === a).length;
@@ -27,7 +25,6 @@ Core.views = {
 
         return `
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 mb-12 p-2">
-                
                 <div class="border-l-4 border-brandRed pl-8">
                     <div class="flex flex-col mb-8">
                         <p class="text-[12px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Personalstand</p>
@@ -36,23 +33,12 @@ Core.views = {
                             <span class="text-[12px] font-black text-slate-400 uppercase tracking-widest">Gesamt</span>
                         </div>
                     </div>
-
                     <div class="flex gap-12">
-                        <div>
-                            <p class="text-[12px] font-black text-brandRed uppercase italic mb-1">A</p>
-                            <p class="text-4xl font-black italic text-slate-800 dark:text-slate-200">${aCount}</p>
-                        </div>
-                        <div>
-                            <p class="text-[12px] font-black text-slate-400 uppercase italic mb-1">UA</p>
-                            <p class="text-4xl font-black italic text-slate-800 dark:text-slate-200">${uaCount}</p>
-                        </div>
-                        <div>
-                            <p class="text-[12px] font-black text-slate-400 uppercase italic mb-1">TV</p>
-                            <p class="text-4xl font-black italic text-slate-800 dark:text-slate-200">${tvCount}</p>
-                        </div>
+                        <div><p class="text-[12px] font-black text-brandRed uppercase italic mb-1">A</p><p class="text-4xl font-black italic text-slate-800 dark:text-slate-200">${aCount}</p></div>
+                        <div><p class="text-[12px] font-black text-slate-400 uppercase italic mb-1">UA</p><p class="text-4xl font-black italic text-slate-800 dark:text-slate-200">${uaCount}</p></div>
+                        <div><p class="text-[12px] font-black text-slate-400 uppercase italic mb-1">TV</p><p class="text-4xl font-black italic text-slate-800 dark:text-slate-200">${tvCount}</p></div>
                     </div>
                 </div>
-
                 <div class="border-l-4 border-brandRed pl-8">
                     <div class="flex flex-col mb-8">
                         <p class="text-[12px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Einsätze 2026</p>
@@ -61,44 +47,39 @@ Core.views = {
                             <span class="text-[12px] font-black text-slate-400 uppercase tracking-widest">Gesamt</span>
                         </div>
                     </div>
-
                     <div class="grid grid-cols-2 sm:grid-cols-4 gap-8">
-                        <div>
-                            <p class="text-[12px] font-black text-brandRed uppercase italic mb-1">Feuer</p>
-                            <p class="text-3xl font-black italic text-slate-800 dark:text-slate-200">${feuerCount}</p>
-                        </div>
-                        <div>
-                            <p class="text-[12px] font-black text-slate-400 uppercase italic mb-1">TH</p>
-                            <p class="text-3xl font-black italic text-slate-800 dark:text-slate-200">${thCount}</p>
-                        </div>
-                        <div>
-                            <p class="text-[12px] font-black text-slate-400 uppercase italic mb-1">BMA</p>
-                            <p class="text-3xl font-black italic text-slate-800 dark:text-slate-200">${bmaCount}</p>
-                        </div>
-                        <div>
-                            <p class="text-[12px] font-black text-slate-400 uppercase italic mb-1">Andere</p>
-                            <p class="text-3xl font-black italic text-slate-800 dark:text-slate-200">${sonstigeCount}</p>
-                        </div>
+                        <div><p class="text-[12px] font-black text-brandRed uppercase italic mb-1">Feuer</p><p class="text-3xl font-black italic text-slate-800 dark:text-slate-200">${feuerCount}</p></div>
+                        <div><p class="text-[12px] font-black text-slate-400 uppercase italic mb-1">TH</p><p class="text-3xl font-black italic text-slate-800 dark:text-slate-200">${thCount}</p></div>
+                        <div><p class="text-[12px] font-black text-brandRed uppercase italic mb-1">BMA</p><p class="text-3xl font-black italic text-slate-800 dark:text-slate-200">${bmaCount}</p></div>
+                        <div><p class="text-[12px] font-black text-slate-400 uppercase italic mb-1">Andere</p><p class="text-3xl font-black italic text-slate-800 dark:text-slate-200">${sonstigeCount}</p></div>
                     </div>
                 </div>
-
-            </div>
-
-            <div class="mb-12 px-2 flex items-center gap-4 border-t border-slate-100 dark:border-slate-800 pt-8">
-                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Stichtag der Auswertung:</p>
-                <input type="date" value="${Core.state.globalStichtag}" 
-                       onchange="Core.service.updateStichtag(this.value); Core.state.globalStichtag = this.value; Core.router.render()"
-                       class="bg-slate-50 dark:bg-slate-800 px-3 py-1 rounded-lg font-black italic text-brandRed focus:outline-none cursor-pointer">
             </div>
         `;
     },
 
-    // MODULE VIEWS
-    personnel: () => Core.views.renderTable("Personalverwaltung", SCHEMA.personnel, Core.state.data.personnel),
+    // PERSONNEL VIEW (Jetzt mit Stichtag oben)
+    personnel: () => {
+        const controls = `
+            <div class="mb-6 px-4 flex flex-col md:flex-row justify-between items-center gap-4 bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
+                <div class="flex items-center gap-3">
+                    <div class="w-2 h-8 bg-brandRed rounded-full"></div>
+                    <div>
+                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Berechnungsgrundlage</p>
+                        <p class="text-sm font-black italic text-slate-900 dark:text-white uppercase">Stichtag für Beförderungen</p>
+                    </div>
+                </div>
+                <input type="date" value="${Core.state.globalStichtag}" 
+                       onchange="Core.service.updateStichtag(this.value); Core.state.globalStichtag = this.value; Core.router.render()"
+                       class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 px-4 py-2 rounded-xl font-black italic text-brandRed focus:ring-2 focus:ring-brandRed outline-none cursor-pointer shadow-sm">
+            </div>
+        `;
+        return controls + Core.views.renderTable("Personalverwaltung", SCHEMA.personnel, Core.state.data.personnel);
+    },
+
     operations: () => Core.views.renderTable("Einsatzdokumentation", SCHEMA.operations, Core.state.data.operations),
     events: () => Core.views.renderTable("Termine & Dienstplan", SCHEMA.events, Core.state.data.events),
 
-    // GENERISCHE TABELLEN-FUNKTION
     renderTable: (title, headers, data) => {
         const searchTerm = Core.state.searchTerm.toLowerCase();
         const filteredData = data.filter(row => 
@@ -129,42 +110,27 @@ Core.views = {
                                 <tr class="data-row cursor-pointer" onclick="Core.ui.showDetail('${Core.state.activeModule}', '${row["Pers.Nr."]}')">
                                     ${headers.map(h => {
                                         let val = row[h] || '---';
-                                        
-                                        if (h.includes("Datum") || h === "Eintritt" || h === "Letzte Beförderung") {
-                                            val = Core.ui.formatDate(val);
-                                        }
-
-                                        if (h === "Dienstjahre") {
-                                            val = Core.ui.calculateServiceYears(row["Eintritt"]);
-                                        }
-
+                                        if (h.includes("Datum") || h === "Eintritt" || h === "Letzte Beförderung") val = Core.ui.formatDate(val);
+                                        if (h === "Dienstjahre") val = Core.ui.calculateServiceYears(row["Eintritt"]);
                                         if (h === "Beförderung") {
                                             const check = PromotionLogic.check(row, FW_CONFIG);
                                             const currentRule = FW_CONFIG[row["Dienstgrad"]];
                                             const nextRank = currentRule ? currentRule.next : null;
-
                                             return `
                                                 <td class="px-6 py-4">
                                                     <div class="flex flex-col gap-1">
                                                         ${nextRank ? `<span class="text-[8px] uppercase font-black text-slate-400 italic leading-none mb-0.5 tracking-tighter">Ziel: ${nextRank}</span>` : ''}
-                                                        <span class="${check.color} px-2.5 py-1 rounded-lg text-[9px] font-black uppercase border shadow-sm inline-block w-fit">
-                                                            ${check.status}
-                                                        </span>
-                                                        ${check.status === "WARTEZEIT" && check.monthsLeft > 0 ? 
-                                                            `<span class="text-[8px] text-amber-600 font-black italic ml-1 leading-none">${check.monthsLeft} Mon. verbleibend</span>` : ''}
+                                                        <span class="${check.color} px-2.5 py-1 rounded-lg text-[9px] font-black uppercase border shadow-sm inline-block w-fit">${check.status}</span>
+                                                        ${check.status === "WARTEZEIT" && check.monthsLeft > 0 ? `<span class="text-[8px] text-amber-600 font-black italic ml-1 leading-none">${check.monthsLeft} Mon. verbleibend</span>` : ''}
                                                     </div>
                                                 </td>`;
                                         }
-
                                         return `<td class="px-6 py-4 text-slate-700 dark:text-slate-300">${val}</td>`;
                                     }).join('')}
                                 </tr>
                             `).join('')}
                         </tbody>
                     </table>
-                </div>
-                <div class="p-4 bg-slate-50/50 dark:bg-slate-800/20 text-center">
-                    <p class="text-[9px] font-black italic text-slate-400 uppercase tracking-tighter">Gefiltert: ${filteredData.length} von ${data.length} Einträgen</p>
                 </div>
             </div>`;
     }
