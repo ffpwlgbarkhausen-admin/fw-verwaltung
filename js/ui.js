@@ -1,52 +1,7 @@
 /**
  * UI & Logik-Komponenten - FW-Verwaltung Pro
- * Enthält die Beförderungslogik und Modal-Steuerung
+ * Enthält die Steuerung für Suche, Stichtag und Formatierung
  */
-
-const PromotionLogic = {
-    check(item, config) {
-        const currentRank = item["Dienstgrad"];
-        const rule = config[currentRank];
-
-        if (!rule) return { status: "CHECK N.A.", color: "bg-slate-100 text-slate-400", monthsLeft: 0 };
-        
-        if (!rule.next) {
-            return { 
-                status: "MAX", 
-                color: "bg-transparent text-slate-400 border-slate-200 shadow-none",
-                monthsLeft: 0 
-            };
-        }
-
-        const referenceDate = new Date(item["Letzte Beförderung"] || item["Eintritt"]);
-        
-        // KORREKTUR: Nutze den globalen Stichtag statt das heutige Datum
-        // Das verhindert, dass Zeitzonen-Schwankungen den Tag ändern.
-const stichtagStr = Core.state.globalStichtag || new Date().toISOString().split('T')[0];
-const stichtag = new Date(stichtagStr + 'T12:00:00');
-        
-        // Differenz basierend auf dem Stichtag berechnen
-        const diffTime = stichtag - referenceDate;
-        const yearsServed = diffTime / (1000 * 60 * 60 * 24 * 365.25);
-        
-        const requiredYears = parseInt(rule.years) || 0;
-        const timeMet = isNaN(yearsServed) ? false : yearsServed >= requiredYears;
-        const monthsLeft = Math.max(0, Math.ceil((requiredYears - yearsServed) * 12));
-
-        const missingLgs = rule.req.filter(lg => {
-            const val = item[lg]; 
-            return !val || val === '---' || val === '';
-        });
-
-        if (timeMet && missingLgs.length === 0) {
-            return { status: "BEREIT", color: "bg-emerald-500 text-white", monthsLeft: 0 };
-        } else if (!timeMet) {
-            return { status: "WARTEZEIT", color: "bg-amber-100 text-amber-700", monthsLeft: monthsLeft };
-        } else {
-            return { status: "LG FEHLT", color: "bg-orange-100 text-orange-700", monthsLeft: 0 };
-        }
-    }
-};
 
 Core.ui = {
     searchTimer: null,
@@ -54,49 +9,53 @@ Core.ui = {
     
     handleStichtagInput(value) {
         if (!value) return;
-
         clearTimeout(this.stichtagTimer);
 
-        // Beim Datum warten wir etwas länger (800ms), 
-        // da das Schreiben ins Sheet länger dauert als nur die Liste zu filtern.
+        // UI sofort aktualisieren (für das Input-Feld selbst)
+        Core.state.globalStichtag = value;
+
         this.stichtagTimer = setTimeout(async () => {
+            console.log("Stichtag wird gespeichert:", value);
             await Core.service.updateStichtag(value);
-            // Info: Core.router.render() wird bereits in updateStichtag aufgerufen!
+            // Core.router.render() wird in updateStichtag aufgerufen
         }, 800);
     },
-    // KORRIGIERT: Verhindert den Versatz um einen Tag durch UTC-Nutzung
+
     formatDate(dateVal) {
-    if (!dateVal || dateVal === '---') return '---';
-    
-    const dateStr = String(dateVal);
-    
-    // ISO-Format (YYYY-MM-DD) direkt zerlegen, um Zeitzonen-Sprünge zu verhindern
-    if (dateStr.includes('-')) {
-        const parts = dateStr.split('T')[0].split('-');
-        if (parts.length === 3) {
-            const [year, month, day] = parts;
-            return `${day}.${month}.${year}`;
+        if (!dateVal || dateVal === '---') return '---';
+        
+        const dateStr = String(dateVal);
+        
+        // 1. Check: Wenn das Datum im ISO-Format kommt (YYYY-MM-DD), zerlegen wir es manuell.
+        // Das ist die sicherste Methode gegen Zeitzonen-Fehler.
+        if (dateStr.includes('-')) {
+            const parts = dateStr.split('T')[0].split('-');
+            if (parts.length === 3) {
+                const [year, month, day] = parts;
+                return `${day}.${month}.${year}`;
+            }
         }
-    }
 
-    // Fallback für Date-Objekte
-    const d = new Date(dateVal);
-    if (isNaN(d.getTime())) return dateVal;
+        // 2. Fallback: Falls es ein anderes Format ist, nutzen wir UTC-Methoden
+        const d = new Date(dateVal);
+        if (isNaN(d.getTime())) return dateVal;
 
-    // UTC-Methoden nutzen, um den "Einen-Tag-Vorher"-Effekt zu vermeiden
-    const day = String(d.getUTCDate()).padStart(2, '0');
-    const month = String(d.getUTCMonth() + 1).padStart(2, '0');
-    const year = d.getUTCFullYear();
-    
-    return `${day}.${month}.${year}`;
-}
+        const day = String(d.getUTCDate()).padStart(2, '0');
+        const month = String(d.getUTCMonth() + 1).padStart(2, '0');
+        const year = d.getUTCFullYear();
+        
+        return `${day}.${month}.${year}`;
+    },
+
     calculateServiceYears(entryDate) {
         if (!entryDate) return '---';
-        const start = new Date(entryDate);
+        
+        // Wir setzen beide Daten auf Mittag, um Zeitzonen-Verschiebungen zu neutralisieren
+        const start = new Date(String(entryDate).split('T')[0] + 'T12:00:00');
         if (isNaN(start)) return '---';
         
-        // Nutze Stichtag oder heute
-        const end = Core.state.globalStichtag ? new Date(Core.state.globalStichtag) : new Date();
+        const stichtagStr = Core.state.globalStichtag || new Date().toISOString().split('T')[0];
+        const end = new Date(stichtagStr + 'T12:00:00');
         
         const diff = end - start;
         const years = Math.floor(diff / (1000 * 60 * 60 * 24 * 365.25));
@@ -104,16 +63,18 @@ Core.ui = {
     },
 
     handleSearch(value) {
-        // Den alten Timer stoppen
         clearTimeout(this.searchTimer);
-        
-        // Den Suchbegriff sofort im State speichern (für die Anzeige im Feld)
         Core.state.searchTerm = value;
 
-        // Erst nach 300ms ohne weiteren Tastendruck die Liste neu zeichnen
         this.searchTimer = setTimeout(() => {
-            console.log("Suche wird ausgeführt für:", value);
             Core.router.render();
+            
+            // Fokus nach dem Rendern zurück ins Suchfeld
+            const searchInput = document.getElementById('tableSearch');
+            if (searchInput) {
+                searchInput.focus();
+                searchInput.setSelectionRange(value.length, value.length);
+            }
         }, 300);
     },
 
@@ -148,7 +109,7 @@ Core.ui = {
             }
 
             promoHtml = `
-                <div class="${check.color} p-5 rounded-2xl border mb-6 shadow-sm shadow-slate-200 dark:shadow-none">
+                <div class="${check.color} p-5 rounded-2xl border mb-6 shadow-sm">
                     <div class="flex justify-between items-start">
                         <div>
                             <p class="text-[10px] uppercase font-black italic opacity-70 tracking-widest leading-none mb-1">Status</p>
@@ -175,17 +136,15 @@ Core.ui = {
                     ${promoHtml}
                     <div class="grid grid-cols-1 gap-3">
                         ${Object.entries(item).map(([k, v]) => {
-                            // DATUMS-CHECK FÜR DIE ANZEIGE
                             let displayValue = v;
                             if (k.includes("Datum") || k === "Eintritt" || k === "Letzte Beförderung") {
                                 displayValue = this.formatDate(v);
                             }
-
                             return `
-                            <div class="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-100 dark:border-slate-700/50">
-                                <p class="text-[9px] uppercase font-black text-slate-400 italic tracking-widest mb-1">${k}</p>
-                                <p class="text-sm font-bold text-slate-800 dark:text-slate-200">${displayValue || '---'}</p>
-                            </div>`;
+                                <div class="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-100 dark:border-slate-700/50">
+                                    <p class="text-[9px] uppercase font-black text-slate-400 italic tracking-widest mb-1">${k}</p>
+                                    <p class="text-sm font-bold text-slate-800 dark:text-slate-200">${displayValue || '---'}</p>
+                                </div>`;
                         }).join('')}
                     </div>
                 </div>
