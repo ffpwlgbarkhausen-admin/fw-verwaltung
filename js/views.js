@@ -102,26 +102,23 @@ Core.views = {
                 
                 <div class="overflow-x-auto max-h-[600px] scrollbar-hide">
                     <table class="w-full text-left border-collapse">
-                        <thead class="sticky-header">
+                        <thead class="sticky top-0 bg-slate-50 dark:bg-slate-800 z-10">
                             <tr class="bg-slate-50 dark:bg-slate-800/50">
                                 ${headers.map(h => `<th class="px-6 py-4 text-[10px] font-black italic uppercase text-slate-500 tracking-widest">${h}</th>`).join('')}
                             </tr>
                         </thead>
                         <tbody class="text-[11px] font-bold">
                             ${filteredData.map((row, idx) => {
-                                // Dynamische ID ermitteln
                                 const rowId = row["Pers.Nr."] || row["Einsatznummer"] || row["Thema"] || idx;
                                 
                                 return `
-                                    <tr class="data-row cursor-pointer" onclick="Core.ui.showDetail('${Core.state.activeModule}', '${rowId}')">
+                                    <tr class="data-row cursor-pointer border-t border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors" onclick="Core.ui.showDetail('${Core.state.activeModule}', '${rowId}')">
                                         ${headers.map(h => {
                                             let val = row[h] || '---';
                                             
-                                            // Formatierung nach Spaltentyp
                                             if (h.includes("Datum") || h === "Eintritt" || h === "Letzte Beförderung") val = Core.ui.formatDate(val);
                                             if (h === "Dienstjahre") val = Core.ui.calculateServiceYears(row["Eintritt"]);
                                             
-                                            // Sonderlogik Beförderung
                                             if (h === "Beförderung") {
                                                 const check = PromotionLogic.check(row, FW_CONFIG);
                                                 const currentRule = FW_CONFIG[row["Dienstgrad"]];
@@ -146,4 +143,4 @@ Core.views = {
                 </div>
             </div>`;
     }
-};
+}; // Ende des Objekts
