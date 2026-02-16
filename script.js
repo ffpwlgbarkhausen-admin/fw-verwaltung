@@ -93,15 +93,22 @@ const Core = {
         const json = await res.json();
 
         // --- KORREKTUR: STICHTAG SICHER ÜBERNEHMEN ---
-        if (json.stichtag) {
-            const dateObj = new Date(json.stichtag);
-            // Wir ziehen Jahr, Monat und Tag einzeln raus (lokale Zeit des Browsers)
-            const y = dateObj.getFullYear();
-            const m = String(dateObj.getMonth() + 1).padStart(2, '0');
-            const d = String(dateObj.getDate()).padStart(2, '0');
-            
-            Core.state.globalStichtag = `${y}-${m}-${d}`;
-        }
+        // --- KORREKTUR: STICHTAG SICHER ÜBERNEHMEN (ROBUSTE VERSION) ---
+if (json.stichtag) {
+    // 1. Wir erstellen das Datum
+    const dateObj = new Date(json.stichtag);
+    
+    // 2. Wir addieren künstlich 12 Stunden dazu.
+    // Egal ob Google 23:00 Uhr (Vorabend) oder 00:00 Uhr schickt:
+    // +12 Stunden landet IMMER sicher am richtigen Kalendertag.
+    dateObj.setHours(dateObj.getHours() + 12); 
+
+    const y = dateObj.getFullYear();
+    const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const d = String(dateObj.getDate()).padStart(2, '0');
+    
+    Core.state.globalStichtag = `${y}-${m}-${d}`;
+}
 
         Core.state.data.personnel = json.personnel || [];
         Core.state.data.operations = json.operations || [];
@@ -455,6 +462,7 @@ if ('serviceWorker' in navigator) {
     });
 }
 */
+
 
 
 
