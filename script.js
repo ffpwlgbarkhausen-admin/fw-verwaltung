@@ -90,7 +90,7 @@ const Core = {
     this.updateStatus('orange');
     try {
         const res = await fetch(`${this.endpoint}?action=read&module=all&t=${Date.now()}`);
-        const json = await res.json();
+        const json = await res.json()console.log("ROHDATEN STICHTAG:", json.stichtag);
 
         // --- KORREKTUR: STICHTAG SICHER ÜBERNEHMEN ---
         // --- KORREKTUR: STICHTAG SICHER ÜBERNEHMEN (ROBUSTE VERSION) ---
@@ -462,6 +462,7 @@ if ('serviceWorker' in navigator) {
     });
 }
 */
+
 
 
 
