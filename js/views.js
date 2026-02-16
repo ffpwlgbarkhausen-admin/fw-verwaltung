@@ -6,30 +6,90 @@
 Core.views = {
     // DASHBOARD VIEW
     dashboard: () => {
-        const pCount = Core.state.data.personnel.length;
-        const oCount = Core.state.data.operations.length;
-        
+        // 1. Daten-Vorbereitung: Personal nach Status filtern
+        const personnel = Core.state.data.personnel;
+        const pCount = personnel.length;
+        const aCount = personnel.filter(p => p.Status === 'A').length;
+        const uaCount = personnel.filter(p => p.Status === 'UA').length;
+        const tvCount = personnel.filter(p => p.Status === 'TV').length;
+
+        // 2. Daten-Vorbereitung: Einsätze nach Art filtern
+        const ops = Core.state.data.operations;
+        const oCount = ops.length;
+        const bmaCount = ops.filter(o => o.Art === 'BMA').length;
+        const feuerCount = ops.filter(o => o.Art === 'FEUER').length;
+        const thCount = ops.filter(o => o.Art === 'TH').length;
+        const sonstigeCount = oCount - (bmaCount + feuerCount + thCount);
+
         return `
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                <div class="stat-card">
-                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Personalstand</p>
-                    <p class="text-4xl font-black italic text-brandRed">${pCount}</p>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 mb-12 p-2">
+                
+                <div class="border-l-4 border-brandRed pl-8">
+                    <div class="flex flex-col mb-8">
+                        <p class="text-[12px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Personalstand</p>
+                        <div class="flex items-baseline italic gap-3">
+                            <span class="text-7xl font-black text-slate-900 dark:text-white tracking-tighter">${pCount}</span>
+                            <span class="text-[12px] font-black text-slate-400 uppercase tracking-widest">Gesamt</span>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-12">
+                        <div>
+                            <p class="text-[12px] font-black text-brandRed uppercase italic mb-1">A</p>
+                            <p class="text-4xl font-black italic text-slate-800 dark:text-slate-200">${aCount}</p>
+                        </div>
+                        <div>
+                            <p class="text-[12px] font-black text-slate-400 uppercase italic mb-1">UA</p>
+                            <p class="text-4xl font-black italic text-slate-800 dark:text-slate-200">${uaCount}</p>
+                        </div>
+                        <div>
+                            <p class="text-[12px] font-black text-slate-400 uppercase italic mb-1">TV</p>
+                            <p class="text-4xl font-black italic text-slate-800 dark:text-slate-200">${tvCount}</p>
+                        </div>
+                    </div>
                 </div>
-                <div class="stat-card">
-                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Einsätze gesamt</p>
-                    <p class="text-4xl font-black italic text-slate-900 dark:text-white">${oCount}</p>
+
+                <div class="border-l-4 border-brandRed pl-8">
+                    <div class="flex flex-col mb-8">
+                        <p class="text-[12px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Einsätze 2026</p>
+                        <div class="flex items-baseline italic gap-3">
+                            <span class="text-7xl font-black text-slate-900 dark:text-white tracking-tighter">${oCount}</span>
+                            <span class="text-[12px] font-black text-slate-400 uppercase tracking-widest">Gesamt</span>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-8">
+                        <div>
+                            <p class="text-[12px] font-black text-brandRed uppercase italic mb-1">Feuer</p>
+                            <p class="text-3xl font-black italic text-slate-800 dark:text-slate-200">${feuerCount}</p>
+                        </div>
+                        <div>
+                            <p class="text-[12px] font-black text-slate-400 uppercase italic mb-1">TH</p>
+                            <p class="text-3xl font-black italic text-slate-800 dark:text-slate-200">${thCount}</p>
+                        </div>
+                        <div>
+                            <p class="text-[12px] font-black text-slate-400 uppercase italic mb-1">BMA</p>
+                            <p class="text-3xl font-black italic text-slate-800 dark:text-slate-200">${bmaCount}</p>
+                        </div>
+                        <div>
+                            <p class="text-[12px] font-black text-slate-400 uppercase italic mb-1">Andere</p>
+                            <p class="text-3xl font-black italic text-slate-800 dark:text-slate-200">${sonstigeCount}</p>
+                        </div>
+                    </div>
                 </div>
-                <div class="stat-card">
-                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Stichtag der Auswertung</p>
-                    <input type="date" value="${Core.state.globalStichtag}" 
-                           onchange="Core.service.updateStichtag(this.value); Core.state.globalStichtag = this.value; Core.router.render()"
-                           class="bg-transparent font-black italic text-brandRed focus:outline-none cursor-pointer">
-                </div>
+
             </div>
+
+            <div class="mb-12 px-2 flex items-center gap-4 border-t border-slate-100 dark:border-slate-800 pt-8">
+                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Stichtag der Auswertung:</p>
+                <input type="date" value="${Core.state.globalStichtag}" 
+                       onchange="Core.service.updateStichtag(this.value); Core.state.globalStichtag = this.value; Core.router.render()"
+                       class="bg-slate-50 dark:bg-slate-800 px-3 py-1 rounded-lg font-black italic text-brandRed focus:outline-none cursor-pointer">
+            </div>
+
             ${Core.views.personnel()}
         `;
-    }, 
-
+    },
     // MODULE VIEWS
     personnel: () => Core.views.renderTable("Personalverwaltung", SCHEMA.personnel, Core.state.data.personnel),
     operations: () => Core.views.renderTable("Einsatzdokumentation", SCHEMA.operations, Core.state.data.operations),
