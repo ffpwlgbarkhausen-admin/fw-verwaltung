@@ -1,3 +1,8 @@
+/**
+ * Core Logik - FW-Verwaltung Pro
+ * Verwaltet State, API-Kommunikation und Routing
+ */
+
 const SCHEMA = {
     personnel: ["Pers.Nr.", "Name", "Vorname", "Dienstgrad", "Abteilung", "Eintritt", "Dienstjahre", "Beförderung"],
     operations: ["Einsatznummer", "Datum", "Einsatz Art", "AnzahlPers", "Stunden", "Erstattung"],
@@ -21,20 +26,81 @@ const FW_CONFIG = {
 const Core = {
     state: {
         activeModule: 'dashboard',
-        data: { personnel: [], operations: [], events: [] },
+        data: { personnel: [], operations: [], events: [], promoRules: [] },
         globalStichtag: new Date().toISOString().split('T')[0],
         searchTerm: '',
         selectedYear: 'all'
     },
-    
+
     service: {
+        // HINWEIS: Ersetze diese URL durch deine Web-App URL aus Google Apps Script
         endpoint: 'https://script.google.com/macros/s/AKfycbxA8lHhtAXoGKTCkN1s4thQH-qWQYeNS3QkySUDpB-2_3mrAuy2cuuWBy4UjR4xpjeR/exec',
-        // ... (fetchData Logik wie im Original)
+
+        async fetchData() {
+            const dot = document.getElementById('conn-dot');
+            const viewport = document.getElementById('app-viewport');
+            
+            try {
+                if (dot) dot.className = 'absolute -top-1 -right-2 w-2 h-2 rounded-full bg-orange-500 animate-pulse';
+                
+                // Wir rufen das Modul 'all_dashboard_data' ab, wie in deinem GAS definiert
+                const response = await fetch(`${this.endpoint}?action=read&module=all_dashboard_data`);
+                if (!response.ok) throw new Error("Server-Antwort war nicht ok");
+                
+                const result = await response.json();
+
+                // Mapping der GAS-Daten in den App-State
+                Core.state.data.personnel = result.personnel || [];
+                Core.state.data.operations = result.operations || [];
+                Core.state.data.events = result.dienstplan || []; // GAS liefert 'dienstplan'
+                Core.state.data.promoRules = result.promoRules || [];
+                
+                // Übernahme des Stichtags aus der Google Tabelle (falls vorhanden)
+                if (result.stichtag) {
+                    const sDate = new Date(result.stichtag);
+                    if (!isNaN(sDate)) {
+                        Core.state.globalStichtag = sDate.toISOString().split('T')[0];
+                    }
+                }
+
+                if (dot) dot.className = 'absolute -top-1 -right-2 w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]';
+                
+                Core.router.render();
+            } catch (error) {
+                console.error("Synchronisationsfehler:", error);
+                if (dot) dot.className = 'absolute -top-1 -right-2 w-2 h-2 rounded-full bg-red-500';
+                
+                if (viewport) {
+                    viewport.innerHTML = `
+                        <div class="flex flex-col items-center justify-center py-20">
+                            <div class="bg-red-50 dark:bg-red-900/20 p-8 rounded-3xl border border-red-100 dark:border-red-800 text-center">
+                                <p class="text-red-500 font-black-italic italic uppercase mb-2">Verbindungsfehler</p>
+                                <p class="text-xs text-slate-500 mb-6">Die Daten konnten nicht geladen werden.</p>
+                                <button onclick="Core.service.fetchData()" class="px-6 py-3 bg-white dark:bg-slate-800 shadow-sm rounded-xl font-black-italic italic text-xs uppercase border border-slate-200 dark:border-slate-700">Erneut versuchen</button>
+                            </div>
+                        </div>`;
+                }
+            }
+        },
+
+        // Funktion um den Stichtag zurück ins Google Sheet zu schreiben
+        async updateStichtag(newDate) {
+            const dot = document.getElementById('conn-dot');
+            try {
+                if (dot) dot.className = 'absolute -top-1 -right-2 w-2 h-2 rounded-full bg-blue-500 animate-ping';
+                await fetch(`${this.endpoint}?action=update_stichtag&date=${newDate}`);
+                if (dot) dot.className = 'absolute -top-1 -right-2 w-2 h-2 rounded-full bg-emerald-500';
+            } catch (e) {
+                console.error("Update Fehler:", e);
+                if (dot) dot.className = 'absolute -top-1 -right-2 w-2 h-2 rounded-full bg-red-500';
+            }
+        }
     },
-    
+
     router: {
         navigate(id) {
             Core.state.activeModule = id;
+            Core.state.searchTerm = ""; // Suche beim Wechsel zurücksetzen
             this.render();
             window.scrollTo({ top: 0, behavior: 'smooth' });
         },
@@ -42,16 +108,16 @@ const Core = {
             const nav = document.getElementById('main-nav');
             if(nav) {
                 nav.innerHTML = Core.modules.map(m => `
-                <button onclick="Core.router.navigate('${m.id}')" 
-                        class="px-4 py-2 md:px-6 rounded-md text-[10px] font-black uppercase tracking-widest transition-all ${Core.state.activeModule === m.id ? 'nav-active' : 'text-slate-500 hover:text-slate-900'}">
-                    ${m.label}
-                </button>`).join('');
+                    <button onclick="Core.router.navigate('${m.id}')" 
+                            class="px-4 py-2 md:px-6 rounded-md text-[10px] font-black uppercase tracking-widest transition-all ${Core.state.activeModule === m.id ? 'nav-active' : 'text-slate-500 hover:text-slate-900'}">
+                        ${m.label}
+                    </button>`).join('');
             }
             const viewport = document.getElementById('app-viewport');
             if(viewport) viewport.innerHTML = Core.views[Core.state.activeModule]();
         }
     },
-    
+
     modules: [
         { id: 'dashboard', label: 'Übersicht' },
         { id: 'personnel', label: 'Personal' },
