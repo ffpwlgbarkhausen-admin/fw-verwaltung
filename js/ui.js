@@ -42,6 +42,19 @@ const PromotionLogic = {
 };
 
 Core.ui = {
+    // NEU: Wandelt ISO-Daten in deutsches Format TT.MM.JJJJ um
+    formatDate(dateVal) {
+        if (!dateVal || dateVal === '---') return '---';
+        const d = new Date(dateVal);
+        // Prüfen, ob es ein gültiges Datum ist
+        if (isNaN(d.getTime()) || String(dateVal).length < 5) return dateVal; 
+        return d.toLocaleDateString('de-DE', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric'
+        });
+    },
+
     calculateServiceYears(entryDate) {
         if (!entryDate) return '---';
         const start = new Date(entryDate);
@@ -62,18 +75,13 @@ Core.ui = {
     },
 
     showDetail(moduleId, uniqueId) {
-        // --- NEU: Fehlersichere Suche nach der ID ---
         const item = Core.state.data[moduleId].find(d => 
             (d["Pers.Nr."] && String(d["Pers.Nr."]) === String(uniqueId)) || 
             (d["Einsatznummer"] && String(d["Einsatznummer"]) === String(uniqueId)) ||
             (d["Thema"] && String(d["Thema"]) === String(uniqueId))
         );
         
-        // Falls nichts gefunden wird, brechen wir hier ab, statt einen Fehler zu werfen
-        if (!item) {
-            console.error("Datensatz mit ID " + uniqueId + " nicht gefunden.");
-            return;
-        }
+        if (!item) return;
 
         const modal = document.getElementById('detail-modal');
         const body = document.getElementById('modal-body');
@@ -118,12 +126,19 @@ Core.ui = {
                 <div class="flex-1 overflow-y-auto pr-2 pb-10">
                     ${promoHtml}
                     <div class="grid grid-cols-1 gap-3">
-                        ${Object.entries(item).map(([k, v]) => `
+                        ${Object.entries(item).map(([k, v]) => {
+                            // DATUMS-CHECK FÜR DIE ANZEIGE
+                            let displayValue = v;
+                            if (k.includes("Datum") || k === "Eintritt" || k === "Letzte Beförderung") {
+                                displayValue = this.formatDate(v);
+                            }
+
+                            return `
                             <div class="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-100 dark:border-slate-700/50">
                                 <p class="text-[9px] uppercase font-black text-slate-400 italic tracking-widest mb-1">${k}</p>
-                                <p class="text-sm font-bold text-slate-800 dark:text-slate-200">${v || '---'}</p>
-                            </div>
-                        `).join('')}
+                                <p class="text-sm font-bold text-slate-800 dark:text-slate-200">${displayValue || '---'}</p>
+                            </div>`;
+                        }).join('')}
                     </div>
                 </div>
             </div>
