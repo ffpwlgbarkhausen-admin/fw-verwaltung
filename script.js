@@ -75,56 +75,63 @@ const Core = {
     ],
 
     service: {
-        endpoint: 'https://script.google.com/macros/s/AKfycbxA8lHhtAXoGKTCkN1s4thQH-qWQYeNS3QkySUDpB-2_3mrAuy2cuuWBy4UjR4xpjeR/exec',
-        updateStatus(color) {
-            const d = document.getElementById('conn-dot');
-            if(!d) return;
-            const colorMap = {
-                'green': 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.9)]',
-                'orange': 'bg-amber-500 animate-pulse shadow-[0_0_8px_rgba(245,158,11,0.9)]',
-                'red': 'bg-rose-600 animate-bounce shadow-[0_0_8px_rgba(225,29,72,0.9)]'
-            };
-            d.className = `absolute -top-1 -right-2 w-2 h-2 rounded-full transition-all duration-500 ${colorMap[color] || 'bg-slate-400'}`;
-        },
-        async fetchData() {
-    this.updateStatus('orange');
-    try {
-        const res = await fetch(`${this.endpoint}?action=read&module=all&t=${Date.now()}`);
-        const json = await res.json();
-        
-        // --- KONTROLLE IN DER KONSOLE ---
-        console.log("ROHDATEN STICHTAG:", json.stichtag);
-
-        // --- STICHTAG-FIX (Zahlen direkt extrahieren) ---
+    endpoint: 'https://script.google.com/macros/s/AKfycbxA8lHhtAXoGKTCkN1s4thQH-qWQYeNS3QkySUDpB-2_3mrAuy2cuuWBy4UjR4xpjeR/exec',
+    
+    // Hilfsfunktion: Schreibt Daten sicher in den State
+    applyData(json) {
         if (json.stichtag) {
+            // Wir extrahieren das Datum stur als Text (verhindert 02.05. vs 30.05. Fehler)
             const s = String(json.stichtag);
-            // Sucht nach dem Muster YYYY-MM-DD
-            const match = s.match(/(\d{4})-(\d{2})-(\d{2})/);
-            
+            const match = s.match(/(\d{4})-(\d{2})-(\d{2})/) || s.match(/(\d{2})\.(\d{2})\.(\d{4})/);
             if (match) {
-                // Setzt das Datum stur auf die gefundenen Zahlen
-                Core.state.globalStichtag = `${match[1]}-${match[2]}-${match[3]}`;
-            } else {
-                // Fallback für deutsches Format DD.MM.YYYY
-                const deMatch = s.match(/(\d{2})\.(\d{2})\.(\d{4})/);
-                if (deMatch) {
-                    Core.state.globalStichtag = `${deMatch[3]}-${deMatch[2]}-${deMatch[1]}`;
-                }
+                Core.state.globalStichtag = match[0].includes('-') ? match[0] : `${match[3]}-${match[2]}-${match[1]}`;
             }
         }
-
         Core.state.data.personnel = json.personnel || [];
         Core.state.data.operations = json.operations || [];
-        Core.state.data.events = json.events || []; 
-
-        this.updateStatus('green');
-        Core.router.render();
-    } catch (e) {
-        console.error("Fetch Fehler:", e);
-        this.updateStatus('red');
-    }
-}
+        Core.state.data.events = json.events || [];
     },
+
+    updateStatus(color) {
+        const d = document.getElementById('conn-dot');
+        if(!d) return;
+        const colorMap = {
+            'green': 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.9)]',
+            'orange': 'bg-amber-500 animate-pulse shadow-[0_0_8px_rgba(245,158,11,0.9)]',
+            'red': 'bg-rose-600 animate-bounce shadow-[0_0_8px_rgba(225,29,72,0.9)]'
+        };
+        d.className = `absolute -top-1 -right-2 w-2 h-2 rounded-full transition-all duration-500 ${colorMap[color] || 'bg-slate-400'}`;
+    },
+
+    async fetchData() {
+        // 1. SOFORT-START: Daten aus dem Cache laden (keine Wartezeit!)
+        const cached = localStorage.getItem('fw_data_cache');
+        if (cached) {
+            console.log("🚀 Lade aus Cache...");
+            this.applyData(JSON.parse(cached));
+            Core.router.render(); // App ist sofort bedienbar
+        }
+
+        this.updateStatus('orange');
+        try {
+            // 2. HINTERGRUND-LADEN: Frische Daten vom Server holen
+            const res = await fetch(`${this.endpoint}?action=read&module=all&t=${Date.now()}`);
+            const json = await res.json();
+            
+            console.log("✅ Frische Daten empfangen:", json.stichtag);
+
+            // 3. CACHE AKTUALISIEREN & ANZEIGEN
+            localStorage.setItem('fw_data_cache', JSON.stringify(json));
+            this.applyData(json);
+            
+            this.updateStatus('green');
+            Core.router.render(); // Nur das UI auffrischen
+        } catch (e) {
+            console.error("Netzwerk-Fehler:", e);
+            this.updateStatus('red');
+        }
+    }
+},
 
     router: {
     navigate(id) {
@@ -463,6 +470,7 @@ if ('serviceWorker' in navigator) {
     });
 }
 */
+
 
 
 
