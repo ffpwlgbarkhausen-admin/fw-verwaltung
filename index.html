@@ -2,50 +2,40 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>FW-Verwaltung Pro | LG13 Core</title>
-    
-    <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feuerwehr Verwaltung Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'media',
-            theme: { extend: { colors: { brandRed: '#dc2626' } } }
-        }
-    </script>
+    <link rel="stylesheet" href="css/style.css">
 </head>
-<body class="bg-slate-50 dark:bg-black text-slate-900 dark:text-slate-100 min-h-screen pb-10">
+<body class="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
 
-    <div class="max-w-[1600px] mx-auto px-4 md:px-6 py-6 space-y-6">
-    <header class="bg-white/90 dark:bg-slate-900/90 backdrop-blur-md sticky top-4 z-40 p-3 rounded-[1rem] shadow-sm border border-slate-200/50 dark:border-slate-800 flex justify-between items-center">
-        <div class="flex items-center gap-3 px-3">
-            <div class="bg-brandRed px-3 py-1.5 rounded-xl text-white font-black-italic text-sm italic shadow-sm">LG 13</div>
-            <div class="flex items-center">
-                <h1 class="text-xl font-black-italic italic tracking-tighter">
-                    FW-Verwaltung<span class="text-brandRed relative">Pro<span id="conn-dot" class="absolute -top-1 -right-2 w-2 h-2 rounded-full bg-orange-500 transition-all duration-500 shadow-sm"></span></span>
-                </h1>
-            </div>
-        </div>
-        
-        <nav id="main-nav-desktop" class="hidden md:flex items-center gap-1 bg-slate-100/50 dark:bg-slate-800/50 p-1 rounded-2xl"></nav>
-    </header>
+    <div id="app-shell" class="min-h-screen flex flex-col">
+        <header class="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 p-4">
+            <nav class="flex justify-center gap-4">
+                <button onclick="Core.router.navigate('personnel')" class="px-4 py-2 font-black italic uppercase">Personal</button>
+                <button onclick="Core.router.navigate('operations')" class="px-4 py-2 font-black italic uppercase">Einsätze</button>
+            </nav>
+        </header>
 
-    <main id="app-viewport" class="space-y-8 pb-24 md:pb-8"></main>
-
-    <nav id="main-nav" class="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-lg border-t border-slate-200 dark:border-slate-800 p-2 pb-8 flex justify-around items-center">
-        </nav>
-</div>
+        <main id="app-viewport" class="p-4 flex-1">
+            </main>
+    </div>
 
     <div id="detail-modal" class="fixed inset-0 z-[100] hidden">
         <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="Core.ui.closeDetail()"></div>
         <div class="absolute right-0 top-0 h-full w-full max-w-md bg-white dark:bg-slate-900 shadow-2xl p-8 transform transition-transform duration-300 translate-x-full" id="modal-content">
             <div id="modal-body"></div>
-            <button onclick="Core.ui.closeDetail()" class="mt-8 w-full py-3 bg-slate-100 dark:bg-slate-800 rounded-xl font-black-italic italic uppercase text-sm">Schließen</button>
+            <button onclick="Core.ui.closeDetail()" class="mt-8 w-full py-3 bg-slate-100 dark:bg-slate-800 rounded-xl font-black italic uppercase text-sm">Schließen</button>
         </div>
     </div>
 
-    <script src="script.js"></script>
+    <script src="js/core.js"></script>
+    <script src="js/service.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/views.js"></script>
+    <script>
+        // App Initialisierung
+        window.addEventListener('DOMContentLoaded', () => Core.service.fetchData());
+    </script>
 </body>
 </html>
-
