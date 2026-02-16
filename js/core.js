@@ -57,12 +57,10 @@ const Core = {
                 Core.state.data.events = result.dienstplan || []; // GAS liefert 'dienstplan'
                 Core.state.data.promoRules = result.promoRules || [];
                 
-                // Übernahme des Stichtags aus der Google Tabelle (falls vorhanden)
+                // Übernahme des Stichtags (Direkt als String, um Zeitzonen-Fehler zu vermeiden)
                 if (result.stichtag) {
-                    const sDate = new Date(result.stichtag);
-                    if (!isNaN(sDate)) {
-                        Core.state.globalStichtag = sDate.toISOString().split('T')[0];
-                    }
+                    // Wir nehmen nur die ersten 10 Zeichen (YYYY-MM-DD), falls noch Zeit-Infos dran hängen
+                    Core.state.globalStichtag = String(result.stichtag).substring(0, 10);
                 }
 
                 if (dot) dot.className = 'absolute -top-1 -right-2 w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]';
