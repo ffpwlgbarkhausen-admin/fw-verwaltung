@@ -73,20 +73,25 @@ Core.views = {
                                         }
 
                                         if (h === "Beförderung") {
-                                            const check = PromotionLogic.check(row, FW_CONFIG);
-                                            // Hier bauen wir das Badge mit Monate-Anzeige bei Wartezeit
-                                            return `
-                                                <td class="px-6 py-4">
-                                                    <div class="flex flex-col gap-1">
-                                                        <span class="${check.color} px-2.5 py-1 rounded-lg text-[9px] font-black uppercase border shadow-sm inline-block w-fit">
-                                                            ${check.status}
-                                                        </span>
-                                                        ${check.status === "WARTEZEIT" && check.monthsLeft > 0 ? 
-                                                            `<span class="text-[8px] text-amber-600 font-black italic ml-1 leading-none">${check.monthsLeft} Mon. verbleibend</span>` : ''}
-                                                    </div>
-                                                </td>`;
-                                        }
+    const check = PromotionLogic.check(row, FW_CONFIG);
+    // NEU: Wir holen uns die Regel für den aktuellen Dienstgrad aus der core.js
+    const currentRule = FW_CONFIG[row["Dienstgrad"]];
+    const nextRank = currentRule ? currentRule.next : null;
 
+    return `
+        <td class="px-6 py-4">
+            <div class="flex flex-col gap-1">
+                ${nextRank ? `<span class="text-[8px] uppercase font-black text-slate-400 italic leading-none mb-0.5 tracking-tighter">Ziel: ${nextRank}</span>` : ''}
+                
+                <span class="${check.color} px-2.5 py-1 rounded-lg text-[9px] font-black uppercase border shadow-sm inline-block w-fit">
+                    ${check.status}
+                </span>
+
+                ${check.status === "WARTEZEIT" && check.monthsLeft > 0 ? 
+                    `<span class="text-[8px] text-amber-600 font-black italic ml-1 leading-none">${check.monthsLeft} Mon. verbleibend</span>` : ''}
+            </div>
+        </td>`;
+}
                                         return `<td class="px-6 py-4 text-slate-700 dark:text-slate-300">${val}</td>`;
                                     }).join('')}
                                 </tr>
