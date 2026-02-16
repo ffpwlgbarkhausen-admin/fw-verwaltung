@@ -39,13 +39,30 @@
     </div>
 
     <script src="js/core.js"></script>
+    
     <script src="js/ui.js"></script>
     <script src="js/views.js"></script>
+
     <script>
-        // Initialisierung
-        window.addEventListener('DOMContentLoaded', () => {
-            Core.service.fetchData();
+        // Wir warten, bis das gesamte Browser-Fenster und alle Skripte geladen sind
+        window.addEventListener('load', () => {
+            console.log("System-Check...");
+            
+            // Prüfen, ob alle Module im Core-Objekt vorhanden sind
+            if (typeof Core !== 'undefined' && Core.views && Core.service.fetchData) {
+                console.log("Alle Module geladen. Starte Synchronisation...");
+                Core.service.fetchData();
+            } else {
+                console.error("Fehler: Einige Skript-Dateien (ui.js oder views.js) wurden nicht korrekt geladen.");
+                document.getElementById('app-viewport').innerHTML = `
+                    <div class="p-10 text-center text-red-500 font-black-italic italic">
+                        KRITISCHER FEHLER: Systemkomponenten fehlen.<br>
+                        Bitte prüfen Sie, ob die Dateien im Ordner /js/ korrekt hochgeladen wurden.
+                    </div>
+                `;
+            }
         });
     </script>
 </body>
 </html>
+
