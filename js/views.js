@@ -69,9 +69,10 @@ Core.views = {
                         <p class="text-sm font-black italic text-slate-900 dark:text-white uppercase">Stichtag für Beförderungen</p>
                     </div>
                 </div>
-                <input type="date" value="${Core.state.globalStichtag}" 
-                       onchange="Core.service.updateStichtag(this.value); Core.state.globalStichtag = this.value; Core.router.render()"
-                       class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 px-4 py-2 rounded-xl font-black italic text-brandRed focus:ring-2 focus:ring-brandRed outline-none cursor-pointer shadow-sm">
+                <input type="date" 
+       value="${Core.state.globalStichtag}" 
+       oninput="Core.ui.handleStichtagInput(this.value)"
+       class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 px-4 py-2 rounded-xl font-black italic text-brandRed focus:ring-2 focus:ring-brandRed outline-none cursor-pointer shadow-sm">
             </div>
         `;
         return controls + Core.views.renderTable("Personalverwaltung", SCHEMA.personnel, Core.state.data.personnel);
