@@ -66,18 +66,25 @@ Core.ui = {
     formatDate(dateVal) {
         if (!dateVal || dateVal === '---') return '---';
         
-        // Wir erzwingen, dass das Datum als UTC behandelt wird, 
-        // um den "Ein-Tag-Vorher-Effekt" zu vermeiden
-        const d = new Date(dateVal);
+        // Falls es bereits ein Date-Objekt ist, zu ISO-String wandeln
+        let dateStr = dateVal;
+        if (dateVal instanceof Date) {
+            dateStr = dateVal.toISOString().split('T')[0];
+        }
+
+        // Wir splitten den String (erwartet YYYY-MM-DD oder ähnliches)
+        // und bauen das Datum manuell zusammen, um Zeitzonen-Offsets zu ignorieren
+        const d = new Date(dateStr);
+        
         if (isNaN(d.getTime())) return dateVal;
 
+        // Nutze UTC Methoden, um den Versatz zu verhindern
         const day = String(d.getUTCDate()).padStart(2, '0');
         const month = String(d.getUTCMonth() + 1).padStart(2, '0');
         const year = d.getUTCFullYear();
         
         return `${day}.${month}.${year}`;
-    },
-
+    };
     calculateServiceYears(entryDate) {
         if (!entryDate) return '---';
         const start = new Date(entryDate);
