@@ -8,7 +8,7 @@ Core.views = {
     dashboard: () => {
         const personnel = Core.state.data.personnel;
         const pCount = personnel.length;
-        const getPStatus = (s) => personnel.filter(p => String(p.Abteilung || '').trim().toUpperCase() === s).length;
+        const getPStatus = (s) => personnel.filter(p => String(p.Abteilung || '').trim().toUpperCase() === s).length; 
         
         const aCount = getPStatus('A');
         const uaCount = getPStatus('UA');
