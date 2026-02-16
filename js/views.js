@@ -109,3 +109,4 @@ Core.views = {
                 </div>
             </div>`;
     }
+}; // <--- DIESE KLAMMER HAT GEFEHLT
