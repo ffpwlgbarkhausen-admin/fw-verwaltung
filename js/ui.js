@@ -19,8 +19,13 @@ const PromotionLogic = {
         }
 
         const referenceDate = new Date(item["Letzte Beförderung"] || item["Eintritt"]);
-        const now = new Date();
-        const yearsServed = (now - referenceDate) / (1000 * 60 * 60 * 24 * 365.25);
+        
+        // KORREKTUR: Nutze den globalen Stichtag statt das heutige Datum
+        const stichtag = Core.state.globalStichtag ? new Date(Core.state.globalStichtag) : new Date();
+        
+        // Differenz basierend auf dem Stichtag berechnen
+        const diffTime = stichtag - referenceDate;
+        const yearsServed = diffTime / (1000 * 60 * 60 * 24 * 365.25);
         
         const requiredYears = parseInt(rule.years) || 0;
         const timeMet = isNaN(yearsServed) ? false : yearsServed >= requiredYears;
