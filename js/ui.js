@@ -67,7 +67,11 @@ Core.ui = {
         if (!entryDate) return '---';
         const start = new Date(entryDate);
         if (isNaN(start)) return '---';
-        const diff = new Date() - start;
+        
+        // Nutze Stichtag oder heute
+        const end = Core.state.globalStichtag ? new Date(Core.state.globalStichtag) : new Date();
+        
+        const diff = end - start;
         const years = Math.floor(diff / (1000 * 60 * 60 * 24 * 365.25));
         return years >= 0 ? `${years} Jahre` : '---';
     },
