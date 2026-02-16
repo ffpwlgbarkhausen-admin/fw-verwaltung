@@ -47,6 +47,24 @@ const PromotionLogic = {
 };
 
 Core.ui = {
+    handleStichtagInput(value) {
+        if (!value) return;
+
+        // Wir löschen einen eventuell laufenden Timer
+        clearTimeout(this.stichtagTimer);
+
+        // Wir setzen einen neuen Timer: Erst wenn 800ms lang nichts passiert, 
+        // wird die App aktualisiert und ins Sheet geschrieben.
+        this.stichtagTimer = setTimeout(async () => {
+            console.log("Stichtag wird jetzt verarbeitet:", value);
+            
+            // 1. Ab ans Google Sheet
+            await Core.service.updateStichtag(value);
+            
+            // 2. State ist bereits in updateStichtag() aktualisiert, 
+            // ebenso wie der Core.router.render() Aufruf.
+        }, 800); 
+    },
     // KORRIGIERT: Verhindert den Versatz um einen Tag durch UTC-Nutzung
     formatDate(dateVal) {
         if (!dateVal || dateVal === '---') return '---';
