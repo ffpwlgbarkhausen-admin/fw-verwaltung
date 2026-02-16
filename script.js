@@ -90,22 +90,22 @@ const Core = {
     this.updateStatus('orange');
     try {
         const res = await fetch(`${this.endpoint}?action=read&module=all&t=${Date.now()}`);
-        const json = await res.json(); 
+        const json = await res.json();
         
-        // --- LOG ZUR KONTROLLE ---
+        // --- KONTROLLE IN DER KONSOLE ---
         console.log("ROHDATEN STICHTAG:", json.stichtag);
 
-        // --- DER ULTIMATIVE STICHTAG-FIX (Regex statt Rechenlogik) ---
+        // --- STICHTAG-FIX (Zahlen direkt extrahieren) ---
         if (json.stichtag) {
             const s = String(json.stichtag);
-            // Wir suchen nach YYYY-MM-DD im Text, völlig egal was Google an Zeit dranhängt
+            // Sucht nach dem Muster YYYY-MM-DD
             const match = s.match(/(\d{4})-(\d{2})-(\d{2})/);
             
             if (match) {
-                // Wir extrahieren die Zahlen direkt: Jahr-Monat-Tag
+                // Setzt das Datum stur auf die gefundenen Zahlen
                 Core.state.globalStichtag = `${match[1]}-${match[2]}-${match[3]}`;
             } else {
-                // Falls das Format DD.MM.YYYY ist
+                // Fallback für deutsches Format DD.MM.YYYY
                 const deMatch = s.match(/(\d{2})\.(\d{2})\.(\d{4})/);
                 if (deMatch) {
                     Core.state.globalStichtag = `${deMatch[3]}-${deMatch[2]}-${deMatch[1]}`;
@@ -463,6 +463,7 @@ if ('serviceWorker' in navigator) {
     });
 }
 */
+
 
 
 
