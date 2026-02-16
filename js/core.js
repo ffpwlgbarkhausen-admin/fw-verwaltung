@@ -85,15 +85,30 @@ const Core = {
         },
 
         // Funktion um den Stichtag zurück ins Google Sheet zu schreiben
+
         async updateStichtag(newDate) {
             const dot = document.getElementById('conn-dot');
             try {
                 if (dot) dot.className = 'absolute -top-1 -right-2 w-2 h-2 rounded-full bg-blue-500 animate-ping';
-                await fetch(`${this.endpoint}?action=update_stichtag&date=${newDate}`);
+                
+                // 1. Ab ans Google Sheet
+                await fetch(`${this.endpoint}?action=update_stichtag&date=${newDate}`, { mode: 'no-cors' });
+                
+                // 2. WICHTIG: Lokal speichern, damit die App sofort mit dem neuen Datum rechnet
+                Core.state.globalStichtag = newDate;
+                
                 if (dot) dot.className = 'absolute -top-1 -right-2 w-2 h-2 rounded-full bg-emerald-500';
+                
+                // 3. UI neu zeichnen, damit alle Beförderungs-Badges sofort aktualisiert werden
+                Core.router.render();
+                
             } catch (e) {
                 console.error("Update Fehler:", e);
                 if (dot) dot.className = 'absolute -top-1 -right-2 w-2 h-2 rounded-full bg-red-500';
+                
+                // Auch im Fehlerfall lokal setzen, damit der User das Ergebnis sieht
+                Core.state.globalStichtag = newDate;
+                Core.router.render();
             }
         }
     },
