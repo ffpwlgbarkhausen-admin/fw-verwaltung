@@ -42,17 +42,21 @@ const PromotionLogic = {
 };
 
 Core.ui = {
-    // NEU: Wandelt ISO-Daten in deutsches Format TT.MM.JJJJ um
+    // KORRIGIERT: Verhindert den Versatz um einen Tag durch UTC-Nutzung
     formatDate(dateVal) {
         if (!dateVal || dateVal === '---') return '---';
         const d = new Date(dateVal);
+        
         // Prüfen, ob es ein gültiges Datum ist
-        if (isNaN(d.getTime()) || String(dateVal).length < 5) return dateVal; 
-        return d.toLocaleDateString('de-DE', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric'
-        });
+        if (isNaN(d.getTime())) return dateVal; 
+
+        // Wir extrahieren die Zahlen direkt aus den UTC-Werten, 
+        // um Zeitzonensprünge (z.B. 00:00 Uhr -> 23:00 Uhr Vortag) zu vermeiden.
+        const day = String(d.getUTCDate()).padStart(2, '0');
+        const month = String(d.getUTCMonth() + 1).padStart(2, '0');
+        const year = d.getUTCFullYear();
+        
+        return `${day}.${month}.${year}`;
     },
 
     calculateServiceYears(entryDate) {
