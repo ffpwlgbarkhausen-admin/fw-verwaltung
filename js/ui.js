@@ -61,9 +61,15 @@ Core.ui = {
         Core.router.render();
     },
 
-    showDetail(moduleId, index) {
-        const item = Core.state.data[moduleId][index];
-        if (!item) return;
+    showDetail(moduleId, uniqueId) {
+    // Suche den Datensatz anhand der Pers.Nr. (oder Einsatznummer)
+    const item = Core.state.data[moduleId].find(d => 
+        (d["Pers.Nr."] && String(d["Pers.Nr."]) === String(uniqueId)) || 
+        (d["Einsatznummer"] && String(d["Einsatznummer"]) === String(uniqueId)) ||
+        (d["Thema"] && String(d["Thema"]) === String(uniqueId))
+    );
+    
+    if (!item) return;
 
         const modal = document.getElementById('detail-modal');
         const body = document.getElementById('modal-body');
