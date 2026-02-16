@@ -4,7 +4,7 @@
  */
 
 Core.views = {
-    // DASHBOARD VIEW (Jetzt ohne Stichtag)
+    // DASHBOARD VIEW
     dashboard: () => {
         const personnel = Core.state.data.personnel;
         const pCount = personnel.length;
@@ -58,7 +58,7 @@ Core.views = {
         `;
     },
 
-    // PERSONNEL VIEW (Jetzt mit Stichtag oben)
+    // PERSONNEL VIEW
     personnel: () => {
         const controls = `
             <div class="mb-6 px-4 flex flex-col md:flex-row justify-between items-center gap-4 bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
@@ -70,9 +70,9 @@ Core.views = {
                     </div>
                 </div>
                 <input type="date" 
-       value="${Core.state.globalStichtag}" 
-       oninput="Core.ui.handleStichtagInput(this.value)"
-       class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 px-4 py-2 rounded-xl font-black italic text-brandRed focus:ring-2 focus:ring-brandRed outline-none cursor-pointer shadow-sm">
+                    value="${Core.state.globalStichtag}" 
+                    oninput="Core.ui.handleStichtagInput(this.value)"
+                    class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 px-4 py-2 rounded-xl font-black italic text-brandRed focus:ring-2 focus:ring-brandRed outline-none cursor-pointer shadow-sm">
             </div>
         `;
         return controls + Core.views.renderTable("Personalverwaltung", SCHEMA.personnel, Core.state.data.personnel);
@@ -81,6 +81,7 @@ Core.views = {
     operations: () => Core.views.renderTable("Einsatzdokumentation", SCHEMA.operations, Core.state.data.operations),
     events: () => Core.views.renderTable("Termine & Dienstplan", SCHEMA.events, Core.state.data.events),
 
+    // GENERISCHE TABELLE
     renderTable: (title, headers, data) => {
         const searchTerm = Core.state.searchTerm.toLowerCase();
         const filteredData = data.filter(row => 
@@ -108,32 +109,38 @@ Core.views = {
                         </thead>
                         <tbody class="text-[11px] font-bold">
                             ${filteredData.map((row, idx) => {
-    // Dynamische ID ermitteln, je nachdem was vorhanden ist
-    const rowId = row["Pers.Nr."] || row["Einsatznummer"] || row["Thema"] || idx;
-    
-    return `
-        <tr class="data-row cursor-pointer" onclick="Core.ui.showDetail('${Core.state.activeModule}', '${rowId}')">
-            ${headers.map(h => {
-                                        let val = row[h] || '---';
-                                        if (h.includes("Datum") || h === "Eintritt" || h === "Letzte Beförderung") val = Core.ui.formatDate(val);
-                                        if (h === "Dienstjahre") val = Core.ui.calculateServiceYears(row["Eintritt"]);
-                                        if (h === "Beförderung") {
-                                            const check = PromotionLogic.check(row, FW_CONFIG);
-                                            const currentRule = FW_CONFIG[row["Dienstgrad"]];
-                                            const nextRank = currentRule ? currentRule.next : null;
-                                            return `
-                                                <td class="px-6 py-4">
-                                                    <div class="flex flex-col gap-1">
-                                                        ${nextRank ? `<span class="text-[8px] uppercase font-black text-slate-400 italic leading-none mb-0.5 tracking-tighter">Ziel: ${nextRank}</span>` : ''}
-                                                        <span class="${check.color} px-2.5 py-1 rounded-lg text-[9px] font-black uppercase border shadow-sm inline-block w-fit">${check.status}</span>
-                                                        ${check.status === "WARTEZEIT" && check.monthsLeft > 0 ? `<span class="text-[8px] text-amber-600 font-black italic ml-1 leading-none">${check.monthsLeft} Mon. verbleibend</span>` : ''}
-                                                    </div>
-                                                </td>`;
-                                        }
-                                        return `<td class="px-6 py-4 text-slate-700 dark:text-slate-300">${val}</td>`;
-                                    }).join('')}
-                                </tr>
-                            `).join('')}
+                                // Dynamische ID ermitteln
+                                const rowId = row["Pers.Nr."] || row["Einsatznummer"] || row["Thema"] || idx;
+                                
+                                return `
+                                    <tr class="data-row cursor-pointer" onclick="Core.ui.showDetail('${Core.state.activeModule}', '${rowId}')">
+                                        ${headers.map(h => {
+                                            let val = row[h] || '---';
+                                            
+                                            // Formatierung nach Spaltentyp
+                                            if (h.includes("Datum") || h === "Eintritt" || h === "Letzte Beförderung") val = Core.ui.formatDate(val);
+                                            if (h === "Dienstjahre") val = Core.ui.calculateServiceYears(row["Eintritt"]);
+                                            
+                                            // Sonderlogik Beförderung
+                                            if (h === "Beförderung") {
+                                                const check = PromotionLogic.check(row, FW_CONFIG);
+                                                const currentRule = FW_CONFIG[row["Dienstgrad"]];
+                                                const nextRank = currentRule ? currentRule.next : null;
+                                                return `
+                                                    <td class="px-6 py-4">
+                                                        <div class="flex flex-col gap-1">
+                                                            ${nextRank ? `<span class="text-[8px] uppercase font-black text-slate-400 italic leading-none mb-0.5 tracking-tighter">Ziel: ${nextRank}</span>` : ''}
+                                                            <span class="${check.color} px-2.5 py-1 rounded-lg text-[9px] font-black uppercase border shadow-sm inline-block w-fit">${check.status}</span>
+                                                            ${check.status === "WARTEZEIT" && check.monthsLeft > 0 ? `<span class="text-[8px] text-amber-600 font-black italic ml-1 leading-none">${check.monthsLeft} Mon. verbleibend</span>` : ''}
+                                                        </div>
+                                                    </td>`;
+                                            }
+                                            
+                                            return `<td class="px-6 py-4 text-slate-700 dark:text-slate-300">${val}</td>`;
+                                        }).join('')}
+                                    </tr>
+                                `;
+                            }).join('')}
                         </tbody>
                     </table>
                 </div>
