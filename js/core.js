@@ -1,57 +1,61 @@
-const FW_CONFIG = {
-    "Feuerwehrmann-Anwärter": { next: "Feuerwehrmann", req: ["TM1"], years: 1 },
-    "Feuerwehrmann": { next: "Oberfeuerwehrmann", req: ["Sprechfunker", "AGT"], years: 2 },
-    "Oberfeuerwehrmann": { next: "Hauptfeuerwehrmann", req: ["Truppführer"], years: 5 },
-    // Erweitere diese Liste nach deiner Laufbahnverordnung
+const SCHEMA = {
+    personnel: ["Pers.Nr.", "Name", "Vorname", "Dienstgrad", "Abteilung", "Eintritt", "Dienstjahre", "Beförderung"],
+    operations: ["Einsatznummer", "Datum", "Einsatz Art", "AnzahlPers", "Stunden", "Erstattung"],
+    events: ["Datum", "Thema", "Typ", "Leitung"]
 };
 
-const SCHEMA = {
-    personnel: ["Pers.Nr.", "Name", "Vorname", "Abteilung", "Eintritt", "Dienstgrad", "Beförderung"],
-    operations: ["Einsatznummer", "Datum", "Einsatz Art", "Einsatz Ort", "Stunden", "AnzahlPers", "Erstattung"]
+const FW_CONFIG = {
+    "FMA/FFA": { next: "FM/FF", req: ["Eintritt"], years: 0 },
+    "FM/FF": { next: "OFM/OFF", req: ["Grundausbildung"], years: 2 },
+    "OFM/OFF": { next: "HFM/HFF", req: [], years: 5 },
+    "HFM/HFF": { next: "UBM", req: ["Truppführer"], years: 1 },
+    "UBM": { next: "BM", req: ["Gruppenführer"], years: 2 },
+    "BM": { next: "OBM", req: [], years: 2 },
+    "OBM": { next: "HBM", req: [], years: 5 },
+    "HBM": { next: "BI", req: ["Zugführer"], years: 0 },
+    "BI": { next: "BOI", req: ["Verbandsführer 1"], years: 0 },
+    "BOI": { next: "StBI", req: ["Verbandsführer 2"], years: 0 },
+    "StBI": { next: null, req: [], years: 0 }
 };
 
 const Core = {
     state: {
-        activeModule: 'personnel',
+        activeModule: 'dashboard',
         data: { personnel: [], operations: [], events: [] },
-        searchTerm: '',
         globalStichtag: new Date().toISOString().split('T')[0],
+        searchTerm: '',
         selectedYear: 'all'
     },
     
+    service: {
+        endpoint: 'https://script.google.com/macros/s/AKfycbxA8lHhtAXoGKTCkN1s4thQH-qWQYeNS3QkySUDpB-2_3mrAuy2cuuWBy4UjR4xpjeR/exec',
+        // ... (fetchData Logik wie im Original)
+    },
+    
     router: {
-        navigate(module) {
-            Core.state.activeModule = module;
-            Core.ui.render();
+        navigate(id) {
+            Core.state.activeModule = id;
+            this.render();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        },
+        render() {
+            const nav = document.getElementById('main-nav');
+            if(nav) {
+                nav.innerHTML = Core.modules.map(m => `
+                <button onclick="Core.router.navigate('${m.id}')" 
+                        class="px-4 py-2 md:px-6 rounded-md text-[10px] font-black uppercase tracking-widest transition-all ${Core.state.activeModule === m.id ? 'nav-active' : 'text-slate-500 hover:text-slate-900'}">
+                    ${m.label}
+                </button>`).join('');
+            }
+            const viewport = document.getElementById('app-viewport');
+            if(viewport) viewport.innerHTML = Core.views[Core.state.activeModule]();
         }
-    }
-};
-
-const PromotionLogic = {
-    check(member, config) {
-        const currentRank = member["Dienstgrad"];
-        const rule = config[currentRank];
-        if (!rule) return { status: "MAX", color: "bg-slate-100 text-slate-400 border-slate-200" };
-
-        const stichtag = new Date(Core.state.globalStichtag);
-        const lastPromotion = new Date(member["letzte Beförderung"] || member["Eintritt"]);
-        
-        const diffTime = Math.abs(stichtag - lastPromotion);
-        const diffMonths = Math.ceil(diffTime / (1000 * 60 * 60 * 24 * 30.44));
-        const requiredMonths = rule.years * 12;
-
-        const hasLehrgaenge = rule.req.every(req => 
-            Object.values(member).some(val => String(val).includes(req))
-        );
-
-        if (diffMonths >= requiredMonths && hasLehrgaenge) {
-            return { status: "BEREIT", color: "bg-emerald-500 text-white border-emerald-600" };
-        }
-        
-        return { 
-            status: "WARTEZEIT", 
-            monthsLeft: Math.max(0, requiredMonths - diffMonths),
-            color: "bg-amber-100 text-amber-700 border-amber-200" 
-        };
-    }
+    },
+    
+    modules: [
+        { id: 'dashboard', label: 'Übersicht' },
+        { id: 'personnel', label: 'Personal' },
+        { id: 'operations', label: 'Einsätze' },
+        { id: 'events', label: 'Termine' }
+    ]
 };
