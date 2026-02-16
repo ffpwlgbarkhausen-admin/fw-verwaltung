@@ -27,7 +27,8 @@ const Core = {
     state: {
         activeModule: 'dashboard',
         data: { personnel: [], operations: [], events: [], promoRules: [] },
-        globalStichtag: new Date().toISOString().split('T')[0],
+        // Manuelle Fixierung auf den 30.05.2026
+        globalStichtag: "2026-05-30", 
         searchTerm: '',
         selectedYear: 'all'
     },
