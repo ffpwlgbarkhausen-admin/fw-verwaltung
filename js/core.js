@@ -27,8 +27,9 @@ const Core = {
     state: {
         activeModule: 'dashboard',
         data: { personnel: [], operations: [], events: [], promoRules: [] },
-        // Manuelle Fixierung auf den 30.05.2026
-        globalStichtag: "2026-05-30", 
+        // Wir setzen es initial auf leer oder heute, 
+        // da es gleich durch handleFullDataSync() aus dem Sheet befüllt wird.
+        globalStichtag: "", 
         searchTerm: '',
         selectedYear: 'all'
     },
