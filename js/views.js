@@ -28,7 +28,7 @@ Core.views = {
             </div>
             ${Core.views.personnel()}
         `;
-    },
+    }, 
 
     // MODULE VIEWS
     personnel: () => Core.views.renderTable("Personalverwaltung", SCHEMA.personnel, Core.state.data.personnel),
