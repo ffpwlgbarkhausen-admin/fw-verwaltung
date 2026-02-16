@@ -47,23 +47,20 @@ const PromotionLogic = {
 };
 
 Core.ui = {
+    searchTimer: null,
+    stichtagTimer: null,
+    
     handleStichtagInput(value) {
         if (!value) return;
 
-        // Wir löschen einen eventuell laufenden Timer
         clearTimeout(this.stichtagTimer);
 
-        // Wir setzen einen neuen Timer: Erst wenn 800ms lang nichts passiert, 
-        // wird die App aktualisiert und ins Sheet geschrieben.
+        // Beim Datum warten wir etwas länger (800ms), 
+        // da das Schreiben ins Sheet länger dauert als nur die Liste zu filtern.
         this.stichtagTimer = setTimeout(async () => {
-            console.log("Stichtag wird jetzt verarbeitet:", value);
-            
-            // 1. Ab ans Google Sheet
             await Core.service.updateStichtag(value);
-            
-            // 2. State ist bereits in updateStichtag() aktualisiert, 
-            // ebenso wie der Core.router.render() Aufruf.
-        }, 800); 
+            // Info: Core.router.render() wird bereits in updateStichtag aufgerufen!
+        }, 800);
     },
     // KORRIGIERT: Verhindert den Versatz um einen Tag durch UTC-Nutzung
     formatDate(dateVal) {
@@ -95,13 +92,17 @@ Core.ui = {
     },
 
     handleSearch(value) {
-        Core.state.searchTerm = value;
+        // Den alten Timer stoppen
+        clearTimeout(this.searchTimer);
         
-        clearTimeout(debounceTimer); // Lösche den alten Timer
-        debounceTimer = setTimeout(() => {
+        // Den Suchbegriff sofort im State speichern (für die Anzeige im Feld)
+        Core.state.searchTerm = value;
+
+        // Erst nach 300ms ohne weiteren Tastendruck die Liste neu zeichnen
+        this.searchTimer = setTimeout(() => {
+            console.log("Suche wird ausgeführt für:", value);
             Core.router.render();
-            console.log("Suche ausgeführt für:", value);
-        }, 300); // 300ms warten bei der Suche
+        }, 300);
     },
 
     resetSearch() {
