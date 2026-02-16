@@ -87,20 +87,35 @@ const Core = {
             d.className = `absolute -top-1 -right-2 w-2 h-2 rounded-full transition-all duration-500 ${colorMap[color] || 'bg-slate-400'}`;
         },
         async fetchData() {
-            this.updateStatus('orange');
-            try {
-                const res = await fetch(`${this.endpoint}?action=read&module=all&t=${Date.now()}`);
-                const json = await res.json();
-                if (json.stichtag) Core.state.globalStichtag = json.stichtag.split('T')[0];
-                Core.state.data.personnel = json.personnel || [];
-                Core.state.data.operations = json.operations || [];
-                Core.state.data.events = json.events || [];
-                this.updateStatus('green');
-                Core.router.render();
-            } catch (e) {
-                this.updateStatus('red');
-            }
+    this.updateStatus('orange');
+    try {
+        const res = await fetch(`${this.endpoint}?action=read&module=all&t=${Date.now()}`);
+        const json = await res.json();
+
+        // --- KORREKTUR: STICHTAG SICHER ÜBERNEHMEN ---
+        if (json.stichtag) {
+            const dateObj = new Date(json.stichtag);
+            // Wir ziehen Jahr, Monat und Tag einzeln raus (lokale Zeit des Browsers)
+            const y = dateObj.getFullYear();
+            const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+            const d = String(dateObj.getDate()).padStart(2, '0');
+            
+            Core.state.globalStichtag = `${y}-${m}-${d}`;
         }
+
+        Core.state.data.personnel = json.personnel || [];
+        Core.state.data.operations = json.operations || [];
+        
+        // Denke an die Uhrzeit-Korrektur (+1 Std), die wir vorhin besprochen haben!
+        Core.state.data.events = json.events || []; 
+
+        this.updateStatus('green');
+        Core.router.render();
+    } catch (e) {
+        console.error("Fetch Fehler:", e);
+        this.updateStatus('red');
+    }
+}
     },
 
     router: {
@@ -440,6 +455,7 @@ if ('serviceWorker' in navigator) {
     });
 }
 */
+
 
 
 
