@@ -23,6 +23,7 @@ const FW_CONFIG = {
     "StBI": { next: null, req: [], years: 0 }
 };
 
+let debounceTimer; // Globaler Timer für die Eingabe-Verzögerung
 const Core = {
     state: {
         activeModule: 'dashboard',
